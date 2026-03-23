@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package employee;
+
+option java_multiple_files = true;
+option java_package = "com.los.grpc.employee";
+option java_outer_classname = "EmployeeProto";
+
+message EmployeeRequest {
+  string employeeId = 1;
+}
+
+message EmployeeResponse {
+  string employeeId = 1;
+  string userId = 2;
+  string fullName = 3;
+  string email = 4;
+  string roleId = 5;
+  string profileId = 6;
+  bool active = 7;
+}
+
+message UpdateEmployeeStatusRequest {
+  string userId = 1;
+  bool active = 2;
+}
+
+message UpdateEmployeeStatusResponse {
+  string employeeId = 1;
+  bool active = 2;
+}
+
+service EmployeeService {
+
+  rpc GetEmployeeById (EmployeeRequest)
+      returns (EmployeeResponse);
+
+  rpc UpdateEmployeeStatus (UpdateEmployeeStatusRequest)
+      returns (UpdateEmployeeStatusResponse);
+}

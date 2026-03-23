@@ -1,0 +1,8 @@
+### GET request to example server
+
+
+GRPC localhost:9091/employee.EmployeeService/GetEmployeeById
+
+{
+  "employeeId": "EMP001"
+}
