@@ -3,7 +3,7 @@ package com.los.loanoriginatingsystem.kyc.service.processor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.los.loanoriginatingsystem.integration.http.client.HttpCalloutService;
 import com.los.loanoriginatingsystem.kyc.aadhaar.dto.AadhaarOCRResponseDTO;
-import com.los.loanoriginatingsystem.kyc.aadhaar.dto.AadhaarVerificationResponseDTO;
+import com.los.loanoriginatingsystem.kyc.aadhaar.dto.AadhaarSubmitOtpResponseDTO;
 import com.los.loanoriginatingsystem.kyc.mapper.AadhaarMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -46,7 +46,7 @@ public class AadhaarProcessor implements KYCProcessor {
                 null
         );
 
-        return parse(verifyResponse, AadhaarVerificationResponseDTO.class);
+        return parse(verifyResponse, AadhaarSubmitOtpResponseDTO.class);
     }
 
     private <T> T parse(String json, Class<T> clazz) {

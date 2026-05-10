@@ -28,6 +28,9 @@ public class OutboxEvent {
     @Column(columnDefinition = "TEXT")
     private String payload;
 
+    @Column(name = "retry_count")
+    private int retryCount;
+
     private boolean published = false;
 
     private LocalDateTime createdAt = LocalDateTime.now();

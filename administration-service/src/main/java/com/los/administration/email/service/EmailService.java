@@ -19,6 +19,7 @@ public class EmailService {
 
         } catch (Exception e) {
             log.error("Email failed", e);
+            throw new RuntimeException("EMAIL_FAILED", e);
         }
     }
 }

@@ -1,11 +1,13 @@
 package com.los.administration.user.controller;
 
 import com.los.administration.common.dto.ApiResponse;
+import com.los.administration.security.annotation.RequiresPermission;
 import com.los.administration.user.bulk.BulkUserUploadResult;
 import com.los.administration.user.bulk.dto.BulkUploadPreviewResponse;
 import com.los.administration.user.bulk.store.BulkUploadErrorStore;
 import com.los.administration.user.dto.UserCreateRequest;
 import com.los.administration.user.dto.UserResponse;
+import com.los.administration.user.dto.UserUpdateRequest;
 import com.los.administration.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ public class UserController {
     private final BulkUploadErrorStore bulkUploadErrorStore;
 
     @PreAuthorize("hasRole('ADMIN')")
+    @RequiresPermission(object = "USER", action = "CREATE")
     @PostMapping
     public ApiResponse<UserResponse> createUser(
             @Valid @RequestBody UserCreateRequest request) {
@@ -41,6 +44,7 @@ public class UserController {
 
 
     @PreAuthorize("hasRole('ADMIN')")
+    @RequiresPermission(object = "USER", action = "UPDATE")
     @PatchMapping("/{userId}/activate")
     public ApiResponse<UserResponse> activate(@PathVariable String userId) {
         UserResponse response = userService.activateUser(userId);
@@ -48,12 +52,24 @@ public class UserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @RequiresPermission(object = "USER", action = "UPDATE")
     @PatchMapping("/{userId}/deactivate")
     public ApiResponse<UserResponse> deactivate(@PathVariable String userId) {
         UserResponse response = userService.deactivateUser(userId);
         return ApiResponse.success(response, "User deactivated successfully");
     }
 
+    @PatchMapping("/{userId}")
+    @RequiresPermission(object = "USER", action = "UPDATE")
+    public ApiResponse<UserResponse> updateUser(
+            @PathVariable String userId,
+            @RequestBody UserUpdateRequest request
+    ) {
+        return ApiResponse.success(
+                userService.updateUser(userId, request),
+                "User updated"
+        );
+    }
 
     @PostMapping("/bulk-upload/validate")
     public ApiResponse<BulkUploadPreviewResponse> validate(
@@ -87,6 +103,7 @@ public class UserController {
         return ApiResponse.success(result, "Bulk upload processed");
     }
 
+    @RequiresPermission(object = "USER", action = "READ")
     @GetMapping("/bulk-upload/errors/{fileId}")
     public ResponseEntity<byte[]> downloadErrors(@PathVariable String fileId) {
 
@@ -104,6 +121,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @RequiresPermission(object = "USER", action = "READ")
     @GetMapping
     public ApiResponse<Page<UserResponse>> getUsers(
             @RequestParam(required = false) String username,

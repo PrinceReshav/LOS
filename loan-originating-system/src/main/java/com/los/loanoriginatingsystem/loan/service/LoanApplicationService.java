@@ -13,6 +13,8 @@ public class LoanApplicationService {
 
     private final LoanApplicationRepository repository;
 
+
+
     public String saveBankStatementInLA(
             String applicationId,
             Map<String, Object> bankData) {

@@ -9,4 +9,7 @@ public interface LoanApplicationRepository
         extends JpaRepository<LoanApplication, String> {
 
     Optional<LoanApplication> findByAccountAggregatorFileNo(String fileNo);
+    boolean existsByTempId(String tempId);
+
+    Optional<LoanApplication> findByTempId(String tempId);
 }

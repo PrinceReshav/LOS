@@ -1,5 +1,6 @@
 package com.los.administration.user.spec;
 
+import com.los.administration.role.model.RoleType;
 import com.los.administration.user.model.User;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -17,17 +18,36 @@ public class UserSpecification {
                         cb.equal(root.get("employeeId"), employeeId);
     }
 
-    public static Specification<User> roleIdEquals(String roleId) {
+    public static Specification<User> roleNameEquals(String roleName) {
         return (root, query, cb) ->
-                roleId == null ? null :
-                        cb.equal(root.get("roleId"), roleId);
+                roleName == null ? null :
+                        cb.equal(root.get("role").get("roleName"), roleName);
     }
 
-    public static Specification<User> profileIdEquals(String profileId) {
+    public static Specification<User> profileNameEquals(String profileName) {
         return (root, query, cb) ->
-                profileId == null ? null :
-                        cb.equal(root.get("profileId"), profileId);
+                profileName == null ? null :
+                        cb.equal(root.get("profile").get("profileName"), profileName);
     }
+
+
+    /*
+    *public static Specification<User> visibleTo(User currentUser) {
+
+        return (root, query, cb) -> {
+
+            // ROOT → no restriction
+            if (currentUser.getRole().getRoleType() == RoleType.ROOT) {
+                return cb.conjunction();
+            }
+
+            // Only same role or subordinates
+            return cb.or(
+                    cb.equal(root.get("role"), currentUser.getRole())
+                    // later add hierarchy logic
+            );
+        };
+    }*/
 
     public static Specification<User> activeEquals(Boolean active) {
         return (root, query, cb) ->

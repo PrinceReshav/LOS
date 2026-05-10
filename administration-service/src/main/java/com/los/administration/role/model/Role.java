@@ -1,7 +1,11 @@
 package com.los.administration.role.model;
 
+import com.los.administration.common.audit.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(
@@ -16,7 +20,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Role {
+public class Role extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,6 +31,17 @@ public class Role {
 
     @Column(name = "role_name", nullable = false, length = 100)
     private String roleName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role_type", nullable = false)
+    private RoleType roleType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_role_id")
+    private Role parentRole;
+
+    @OneToMany(mappedBy = "parentRole")
+    private List<Role> children = new ArrayList<>();
 
     @Column(name = "description", length = 255)
     private String description;

@@ -8,7 +8,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import org.apache.commons.codec.digest.DigestUtils;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -26,13 +26,16 @@ public class PasswordService {
 
         String rawToken = UUID.randomUUID().toString();
         String tokenHash = passwordEncoder.encode(rawToken);
+        String lookup = DigestUtils.sha256Hex(rawToken);
 
         PasswordResetTokenEntity entity =
                 new PasswordResetTokenEntity(
                         userId,
                         tokenHash,
-                        LocalDateTime.now().plusMinutes(TOKEN_EXPIRY_MINUTES)
+                        lookup,
+                        LocalDateTime.now().plusMinutes(TOKEN_EXPIRY_MINUTES) // ✅ FIX
                 );
+
 
         tokenRepository.save(entity);
         return rawToken; // send via email
@@ -41,13 +44,29 @@ public class PasswordService {
     @Transactional
     public void setPassword(String rawToken, String rawPassword) {
 
-        PasswordResetTokenEntity token = tokenRepository.findAll()
-                .stream()
-                .filter(t -> passwordEncoder.matches(rawToken, t.getTokenHash()))
-                .filter(t -> !t.isUsed())
-                .filter(t -> t.getExpiresAt().isAfter(LocalDateTime.now()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired token"));
+       /* PasswordResetTokenEntity token = tokenRepository.findAll()
+         *       .stream()
+         *       .filter(t -> passwordEncoder.matches(rawToken, t.getTokenHash()))
+          *      .filter(t -> !t.isUsed())
+        *        .filter(t -> t.getExpiresAt().isAfter(LocalDateTime.now()))
+         *       .findFirst()
+        *        .orElseThrow(() -> new IllegalArgumentException("Invalid or expired token"));
+        */
+
+        String lookup = DigestUtils.sha256Hex(rawToken);
+
+        PasswordResetTokenEntity token =
+                tokenRepository.findByTokenLookupAndUsedFalse(lookup)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("Invalid or expired token"));
+
+        if (!passwordEncoder.matches(rawToken, token.getTokenHash())) {
+            throw new IllegalArgumentException("Invalid token");
+        }
+
+        if (token.isUsed() || token.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Expired token");
+        }
 
         Credential credential = credentialRepository
                 .findByUserId(token.getUserId())

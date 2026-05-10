@@ -104,9 +104,11 @@ public class AuthService {
             throw new BadRequestException("INVALID_CREDENTIALS");
         }
 
-        Role role = roleRepository.findByRoleId(user.getRoleId())
-                .orElseThrow(() ->
-                        new IllegalStateException("ROLE_NOT_FOUND"));
+        Role role = user.getRole();
+        if (role == null) {
+            throw new IllegalStateException("ROLE_NOT_FOUND");
+        }
+
 
         String jwt = jwtService.generateToken(
                 user.getUserId(),
@@ -117,7 +119,7 @@ public class AuthService {
         return LoginResponse.builder()
                 .userId(user.getUserId())
                 .username(user.getUsername())
-                .role(user.getRoleId())
+                .role(role.getRoleName())
                 .token(jwt)
                 .build();
     }

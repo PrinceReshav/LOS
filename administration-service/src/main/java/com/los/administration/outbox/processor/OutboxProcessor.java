@@ -49,7 +49,21 @@ public class OutboxProcessor {
 
                     kafkaProducer.publishUserCreated(payload);
                 }
-                event.setPublished(true);
+                try {
+                    // publish
+                    event.setPublished(true);
+
+                } catch (Exception ex) {
+
+                    event.setRetryCount(event.getRetryCount() + 1);
+
+                    log.error(
+                            "OUTBOX_EVENT_FAILED id={} retry={}",
+                            event.getId(),
+                            event.getRetryCount()
+                    );
+                }
+
                 log.info(
                         "OUTBOX_EVENT_PUBLISHED id={} aggregateId={}",
                         event.getId(),

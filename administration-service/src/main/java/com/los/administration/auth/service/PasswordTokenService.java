@@ -6,7 +6,7 @@ import com.los.administration.common.exception.InvalidTokenException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import org.apache.commons.codec.digest.DigestUtils;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -23,11 +23,14 @@ public class PasswordTokenService {
 
         String rawToken = UUID.randomUUID().toString();
         String tokenHash = passwordEncoder.encode(rawToken);
+        String lookup = DigestUtils.sha256Hex(rawToken);
+
 
         PasswordResetTokenEntity entity =
                 new PasswordResetTokenEntity(
                         userId,
                         tokenHash,
+                        lookup,
                         LocalDateTime.now().plusHours(EXPIRY_HOURS)
                 );
 
@@ -38,13 +41,21 @@ public class PasswordTokenService {
 
     public PasswordResetTokenEntity validateToken(String rawToken) {
 
-        return repository.findAll().stream()
-                .filter(t -> passwordEncoder.matches(rawToken, t.getTokenHash()))
-                .findFirst()
-                .filter(t -> !t.isUsed())
-                .filter(t -> t.getExpiresAt().isAfter(LocalDateTime.now()))
-                .orElseThrow(() ->
+        String lookup = DigestUtils.sha256Hex(rawToken);
+
+        PasswordResetTokenEntity token =
+                repository.findByTokenLookupAndUsedFalseAndExpiresAtAfter(
+                        lookup,
+                        LocalDateTime.now()
+                ).orElseThrow(() ->
                         new InvalidTokenException("Invalid or expired token"));
+
+        // 🔒 IMPORTANT: Always keep this
+        if (!passwordEncoder.matches(rawToken, token.getTokenHash())) {
+            throw new InvalidTokenException("Invalid token");
+        }
+
+        return token;
     }
 
 }

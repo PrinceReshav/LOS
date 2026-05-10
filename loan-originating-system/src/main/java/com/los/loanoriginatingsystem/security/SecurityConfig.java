@@ -28,7 +28,7 @@ public class SecurityConfig {
 
                         // public endpoints (if any)
                         .requestMatchers("/internal/**").permitAll()
-
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

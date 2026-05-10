@@ -1,9 +1,8 @@
 package com.los.administration.auth.model;
 
+import com.los.administration.common.audit.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "credentials")
@@ -12,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Credential {
+public class Credential extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,17 +29,5 @@ public class Credential {
     @Column(nullable = false)
     private Boolean passwordSet;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
-    @PrePersist
-    void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = createdAt;
-    }
-
-    @PreUpdate
-    void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
