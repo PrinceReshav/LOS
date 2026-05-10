@@ -41,6 +41,7 @@ public class SmsService {
 
         } catch (Exception e) {
             log.error("SMS failed", e);
+            throw new RuntimeException("SMS_FAILED", e);
         }
     }
 }

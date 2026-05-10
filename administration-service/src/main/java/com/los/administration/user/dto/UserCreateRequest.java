@@ -1,5 +1,6 @@
 package com.los.administration.user.dto;
 
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -29,8 +30,6 @@ public class UserCreateRequest {
     @NotBlank
     private String employeeId;
 
-    // UI sends names, NOT IDs
-    @NotBlank
     private String roleName;
 
     @NotBlank

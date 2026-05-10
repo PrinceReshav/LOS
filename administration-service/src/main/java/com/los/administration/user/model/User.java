@@ -1,9 +1,11 @@
 package com.los.administration.user.model;
 
+import com.los.administration.common.audit.BaseEntity;
+import com.los.administration.profile.model.Profile;
+import com.los.administration.role.model.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
@@ -12,6 +14,12 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "users",
+        indexes = {
+                @Index(name = "idx_username", columnList = "username"),
+                @Index(name = "idx_role", columnList = "role_id"),
+                @Index(name = "idx_profile", columnList = "profile_id"),
+                @Index(name = "idx_employee", columnList = "employee_id")
+        },
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = "user_id"),
                 @UniqueConstraint(columnNames = "username"),
@@ -24,7 +32,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -69,13 +77,14 @@ public class User {
     @Column(name = "employee_id", nullable = false)
     private String employeeId;
 
-    @NotBlank
-    @Column(name = "role_id", nullable = false)
-    private String roleId;
 
-    @NotBlank
-    @Column(name = "profile_id", nullable = false)
-    private String profileId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    private Profile profile;
 
 
     // ===== Lifecycle =====
@@ -90,21 +99,8 @@ public class User {
     @Column(name = "updated_by")
     private String updatedByUserId;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
 
-    private LocalDateTime updatedAt;
 
-    @PrePersist
-    void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = this.createdAt;
-    }
-
-    @PreUpdate
-    void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }
 
 

@@ -13,6 +13,9 @@ public class LoanApplication {
     @Id
     private String id;
 
+    @Column(name = "loan_account_number", unique = true, nullable = false)
+    private String loanAccountNumber;
+
     @Column(name="account_aggregator_file_no")
     private String accountAggregatorFileNo;
 
@@ -48,4 +51,7 @@ public class LoanApplication {
 
     @Column(name = "annualised_turnover")
     private BigDecimal annualisedTurnover;
+
+    @Column(name = "temp_id", unique = true)
+    private String tempId;
 }

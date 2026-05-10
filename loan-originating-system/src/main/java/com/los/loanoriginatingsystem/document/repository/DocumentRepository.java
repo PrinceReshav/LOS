@@ -49,4 +49,6 @@ public interface DocumentRepository
             String id
     );
 
+
+    List<Document> findByTempLoanId(String tempId);
 }

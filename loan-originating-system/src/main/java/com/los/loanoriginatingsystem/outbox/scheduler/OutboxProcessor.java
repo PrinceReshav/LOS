@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.los.events.NotificationEvent;
 import com.los.loanoriginatingsystem.notification.kafkaProducer.NotificationKafkaProducer;
 import com.los.loanoriginatingsystem.outbox.entity.OutboxEvent;
+import com.los.loanoriginatingsystem.outbox.processor.LoanSubmissionProcessor;
 import com.los.loanoriginatingsystem.outbox.repository.OutboxRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ public class OutboxProcessor {
     private final OutboxRepository repository;
     private final NotificationKafkaProducer kafkaProducer;
     private final ObjectMapper objectMapper;
+    private final LoanSubmissionProcessor processor;
 
     @Scheduled(fixedDelay = 5000)
     public void process() {
@@ -32,10 +34,11 @@ public class OutboxProcessor {
 
             try {
 
-                NotificationEvent payload =
-                        objectMapper.readValue(event.getPayload(), NotificationEvent.class);
+                if ("LOAN_SUBMIT".equals(event.getEventType())) {
 
-                kafkaProducer.send(payload);
+                    processor.process(event); // 🔥 THIS WAS MISSING
+
+                }
 
                 event.setStatus("SENT");
                 event.setProcessedAt(LocalDateTime.now());
@@ -50,5 +53,6 @@ public class OutboxProcessor {
 
             repository.save(event);
         }
+
     }
 }

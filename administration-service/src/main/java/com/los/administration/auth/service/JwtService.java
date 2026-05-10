@@ -4,19 +4,32 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
-
+import org.springframework.beans.factory.annotation.Value;
 import java.security.Key;
 import java.util.Date;
 
 @Service
 public class JwtService {
 
-    // ⚠ Minimum 32 chars for HS256
-    private static final String SECRET =
-            "CHANGE_ME_LATER_CHANGE_ME_LATER_CHANGE_ME_LATER";
+    @Value("${jwt.secret}")
+    private String secret;
 
-    private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
+    private Key key;
+
+    @PostConstruct
+    public void init() {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    }
+
+
+
+    // ⚠ Minimum 32 chars for HS256
+    // private static final String SECRET =
+   //          "CHANGE_ME_LATER_CHANGE_ME_LATER_CHANGE_ME_LATER";
+
+   // private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
 
     public String generateToken(String userId, String role) {
 

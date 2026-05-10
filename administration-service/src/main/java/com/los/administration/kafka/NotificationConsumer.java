@@ -1,5 +1,6 @@
 package com.los.administration.kafka;
 
+import com.los.administration.notification.idempotency.IdempotencyRecord;
 import com.los.administration.notification.idempotency.IdempotencyRepository;
 import com.los.events.NotificationEvent;
 import com.los.administration.notification.dto.NotificationRequest;
@@ -8,6 +9,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+
 
 @Component
 @RequiredArgsConstructor
@@ -17,6 +22,8 @@ public class NotificationConsumer {
     private final NotificationService notificationService;
     private final IdempotencyRepository idempotencyRepository;
 
+
+    @Transactional
     @KafkaListener(
             topics = "los.notification",
             groupId = "notification-group"
@@ -28,14 +35,12 @@ public class NotificationConsumer {
             return;
         }
 
-        notificationService.send(
-                new NotificationRequest(
-                        event.type(),
-                        event.templateCode(),
-                        event.recipients(),
-                        event.metadata()
-                )
-        );
+        NotificationRequest req = new NotificationRequest();
+        req.setTemplateCode(event.templateCode());
+        req.setRecipients(event.recipients());
+        req.setMetadata(event.metadata());
+
+        notificationService.send(req);
 
         IdempotencyRecord record = new IdempotencyRecord();
         record.setEventId(event.eventId());

@@ -1,5 +1,6 @@
 package com.los.administration.user.dto;
 
+import jakarta.persistence.Column;
 import lombok.Builder;
 import lombok.Data;
 
@@ -20,7 +21,9 @@ public class UserResponse {
 
     private String employeeId;
 
+   // @Column(name = "role_name", nullable = false, unique = true)
     private String roleName;
+
     private String profileName;
 
     private boolean active;

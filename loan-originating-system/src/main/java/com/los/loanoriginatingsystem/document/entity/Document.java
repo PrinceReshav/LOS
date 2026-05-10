@@ -22,6 +22,13 @@ public class Document {
     @Column(name = "application_id")
     private String applicationId;
 
+    @Lob
+    private String kycResponse;
+
+    private String tempLoanId;
+    private String loanApplicantId;
+    private String loanApplicationId;
+
     @Column(name = "account_number")
     private String accountNumber;
 
@@ -30,7 +37,7 @@ public class Document {
 
     private String status;
 
-    private String loanApplicationId;
+
 
     @Transient
     private String previousBankStatementStatus; // for event detection
@@ -52,4 +59,22 @@ public class Document {
 
     @Column(name = "aa_processing")
     private Boolean aaProcessing = false;
+
+// =============================
+// KYC / GENERIC DOCUMENT SUPPORT
+// =============================
+
+    @Lob
+    @Column(name = "file_data")
+    private String fileData; // base64 or external reference
+
+    @Column(name = "kyc_type")
+    private String kycType; // AADHAAR, PAN, DL, VOTER, LIVENESS
+
+    @Column(name = "is_verified")
+    private Boolean isVerified;
+
+    @Column(name = "is_processed")
+    private Boolean isProcessed;
+
 }

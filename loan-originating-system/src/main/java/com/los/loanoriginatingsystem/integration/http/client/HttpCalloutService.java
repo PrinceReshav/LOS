@@ -6,6 +6,8 @@ import com.los.loanoriginatingsystem.integration.http.multipart.MultipartFormBui
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -20,6 +22,11 @@ public class HttpCalloutService {
     private final WebClient.Builder webClientBuilder;
 
     // ✅ UNIVERSAL METHOD (handles JSON + multipart dynamically)
+    @Retryable(
+            value = Exception.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000)
+    )
     public String execute(
             String clientName,
             Object body,

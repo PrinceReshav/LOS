@@ -45,13 +45,18 @@ public class UserCreatedEventListener {
                 setupLink
         );
 
+       /* log.info(
+         *        "PASSWORD_SETUP_INITIATED | userId={} | employeeId={} | email={} | token={} | link={}",
+         *       event.userId(),
+         *        event.employeeId(),
+         *       event.email(),
+         *       token,
+         *        setupLink
+        );*/
         log.info(
-                "PASSWORD_SETUP_INITIATED | userId={} | employeeId={} | email={} | token={} | link={}",
+                "PASSWORD_SETUP_INITIATED | userId={} | email={}",
                 event.userId(),
-                event.employeeId(),
-                event.email(),
-                token,
-                setupLink
+                event.email()
         );
     }
 }
