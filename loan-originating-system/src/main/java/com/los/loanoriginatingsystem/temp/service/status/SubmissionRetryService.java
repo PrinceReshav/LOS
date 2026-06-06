@@ -53,7 +53,7 @@ public class SubmissionRetryService {
                 temp.getRetryCount() == null ? 1 : temp.getRetryCount() + 1
         );
 
-        temp.setLastRetryAt(LocalDateTime.now().toString());
+        temp.setLastRetryAt(LocalDateTime.now());
 
         tempRepo.save(temp);
 

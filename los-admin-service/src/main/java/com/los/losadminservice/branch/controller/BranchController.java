@@ -2,6 +2,7 @@ package com.los.losadminservice.branch.controller;
 
 import com.los.losadminservice.branch.dto.*;
 import com.los.losadminservice.branch.handler.BranchHandler;
+import com.los.losadminservice.branch.mapper.BranchMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,5 +48,11 @@ public class BranchController {
             @RequestBody BranchUpdateRequest request
     ){
         return branchHandler.update(id, request);
+    }
+
+    @GetMapping
+    public List<BranchResponse> getAll() {
+
+        return branchHandler.getAll();
     }
 }

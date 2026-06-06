@@ -34,10 +34,13 @@ public class Employee {
     private String designation;
 
     private String roleId;
+    private String roleName;
+
 
     private String profileId;
+    private String profileName;
 
-    private String branchId;
+    // private String branchId;
 
     private String managerEmployeeId;
 

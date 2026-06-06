@@ -5,6 +5,8 @@ import com.los.losadminservice.employee.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class EmployeeHierarchyValidator {
@@ -31,23 +33,18 @@ public class EmployeeHierarchyValidator {
         String employeeRole = employee.getRoleId();
         String managerRole = manager.getRoleId();
 
-        if(employeeRole.equals("RELATIONSHIP_OFFICER")){
+        List<String> allowedManagers =
+                HierarchyRoleRules.ALLOWED_MANAGERS
+                        .get(employeeRole);
 
-            if(!managerRole.equals("RELATIONSHIP_MANAGER")){
-                throw new RuntimeException(
-                        "Relationship Officer must report to Relationship Manager"
-                );
-            }
+        if(allowedManagers != null
+                && !allowedManagers.contains(managerRole)){
 
-        }
-
-        if(employeeRole.equals("RELATIONSHIP_MANAGER")){
-
-            if(managerRole.equals("RELATIONSHIP_OFFICER")){
-                throw new RuntimeException(
-                        "Relationship Manager cannot report to RO"
-                );
-            }
+            throw new RuntimeException(
+                    employeeRole +
+                            " cannot report to " +
+                            managerRole
+            );
         }
     }
 }

@@ -3,7 +3,10 @@ package com.los.administration.user.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.los.administration.auth.util.SecurityUtils;
 import com.los.administration.common.exception.ResourceNotFoundException;
+import com.los.administration.grpc.EmployeeGrpcClient;
+import com.los.administration.license.model.UserLicenseType;
 import com.los.administration.outbox.model.OutboxEvent;
+import com.los.administration.outbox.model.OutboxStatus;
 import com.los.administration.outbox.repository.OutboxEventRepository;
 import com.los.administration.profile.model.Profile;
 import com.los.administration.profile.repository.ProfileRepository;
@@ -21,7 +24,6 @@ import com.los.events.UserCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
@@ -40,23 +42,69 @@ public class UserCreationService {
     private final ObjectMapper objectMapper;
     private final UserVisibilityService userVisibilityService;
     private final IncrementalVisibilityService incrementalVisibilityService;
+    private final EmployeeGrpcClient employeeGrpcClient;
+
 
     private static final String USER_PREFIX = "USR_";
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public UserResponse createUser(UserCreateRequest req, String createdByUserId) {
+    public UserResponse createUser(
+            UserCreateRequest req,
+            String createdByUserId
+    ) {
 
-        String currentUser = SecurityUtils.getCurrentUserId();
+       // String currentUser =
+       //         SecurityUtils.getCurrentUserId();
 
-        Role role = roleRepository.findByRoleName(req.getRoleName())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Role not found: " + req.getRoleName()));
+        String currentUser = createdByUserId;
 
-        Profile profile = profileRepository.findByProfileName(req.getProfileName())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Profile not found: " + req.getProfileName()));
+        Role role =
+                roleRepository.findByRoleName(
+                        req.getRoleName()
+                ).orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Role not found"
+                        )
+                );
+
+        Profile profile =
+                profileRepository.findByProfileName(
+                        req.getProfileName()
+                ).orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Profile not found"
+                        )
+                );
+
+        if (userRepository.existsByUsername(
+                req.getUsername()
+        )) {
+
+            throw new IllegalArgumentException(
+                    "Username already exists"
+            );
+        }
+
+        if (userRepository.existsByEmail(
+                req.getEmail()
+        )) {
+
+            throw new IllegalArgumentException(
+                    "Email already exists"
+            );
+        }
+
+        if (userRepository.existsByMobile(
+                req.getMobile()
+        )) {
+
+            throw new IllegalArgumentException(
+                    "Mobile already exists"
+            );
+        }
 
         User user = new User();
+
         user.setUserId(generateUserId());
         user.setUsername(req.getUsername());
         user.setEmail(req.getEmail());
@@ -66,59 +114,142 @@ public class UserCreationService {
         user.setMiddleName(req.getMiddleName());
         user.setLastName(req.getLastName());
         user.setEmployeeId(req.getEmployeeId());
+
         user.setRole(role);
         user.setProfile(profile);
+
+        user.setLicenseType(
+                UserLicenseType.valueOf(
+                        req.getLicenseType()
+                )
+        );
+
         user.setActive(true);
+
         user.setCreatedByUserId(currentUser);
         user.setUpdatedByUserId(currentUser);
 
-        User saved;
-        try {
-            saved = userRepository.save(user);
-        } catch (DataIntegrityViolationException ex) {
-            throw new IllegalArgumentException("Duplicate username/email/mobile");
-        }
+        User saved =
+                userRepository.save(user);
 
-        UserCreatedEvent event = new UserCreatedEvent(
-                saved.getUserId(),
-                saved.getEmployeeId(),
-                saved.getUsername(),
-                saved.getEmail(),
-                saved.getMobile(),
-                saved.getFirstName(),
-                saved.getLastName(),
-                role.getRoleId(),
-                profile.getProfileId()
-        );
+        UserCreatedEvent event =
+                new UserCreatedEvent(
 
-        eventPublisher.publishEvent(event);
+                        saved.getUserId(),
+                        saved.getEmployeeId(),
 
-        OutboxEvent outbox = new OutboxEvent();
+                        saved.getUsername(),
+                        saved.getEmail(),
+                        saved.getMobile(),
+
+                        saved.getFirstName(),
+                        saved.getLastName(),
+
+                        role.getRoleId(),
+                        role.getRoleName(),
+
+                        profile.getProfileId(),
+                        profile.getProfileName()
+                );
+
+        OutboxEvent outbox =
+                new OutboxEvent();
+
         outbox.setAggregateType("USER");
         outbox.setAggregateId(saved.getUserId());
         outbox.setEventType("USER_CREATED");
+        outbox.setStatus(
+                OutboxStatus.PENDING
+        );
 
         try {
-            outbox.setPayload(objectMapper.writeValueAsString(event));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize event", e);
-        }
 
-        outboxRepository.save(outbox);
+            outbox.setPayload(
+                    objectMapper.writeValueAsString(
+                            event
+                    )
+            );
 
-
-        try {
-            incrementalVisibilityService.onUserCreated(saved);
         } catch (Exception ex) {
-            log.error(
-                    "VISIBILITY_BUILD_FAILED | userId={} | error={}",
-                    saved.getUserId(),
-                    ex.getMessage(),
+
+            throw new RuntimeException(
+                    "Failed to serialize event",
                     ex
             );
         }
 
-        return UserMapper.toResponse(saved, role, profile);
+        outboxRepository.save(outbox);
+        eventPublisher.publishEvent(event);
+        try {
+
+            boolean grpcSuccess =
+                    employeeGrpcClient.createEmployee(
+
+                            saved.getEmployeeId(),
+                            saved.getUserId(),
+
+                            saved.getFirstName()
+                                    + " "
+                                    + saved.getLastName(),
+
+                            saved.getEmail(),
+                            saved.getMobile(),
+
+                            saved.getRole().getRoleId(),
+                            saved.getRole().getRoleName(),
+
+                            saved.getProfile().getProfileId(),
+                            saved.getProfile().getProfileName()
+                    );
+
+            if (grpcSuccess) {
+
+                outbox.setStatus(
+                        OutboxStatus.GRPC_SUCCESS
+                );
+
+                outboxRepository.save(outbox);
+
+                log.info(
+                        "EMPLOYEE_CREATED_VIA_GRPC userId={}",
+                        saved.getUserId()
+                );
+
+            } else {
+
+                log.warn(
+                        "EMPLOYEE_GRPC_UNAVAILABLE userId={}",
+                        saved.getUserId()
+                );
+            }
+
+        } catch (Exception ex) {
+
+            log.warn(
+                    "EMPLOYEE_GRPC_FAILED userId={}",
+                    saved.getUserId()
+            );
+        }
+
+        try {
+
+            incrementalVisibilityService
+                    .onUserCreated(saved);
+
+        } catch (Exception ex) {
+
+            log.error(
+                    "VISIBILITY_BUILD_FAILED userId={}",
+                    saved.getUserId(),
+                    ex
+            );
+        }
+
+        return UserMapper.toResponse(
+                saved,
+                role,
+                profile
+        );
     }
 
     private String generateUserId() {

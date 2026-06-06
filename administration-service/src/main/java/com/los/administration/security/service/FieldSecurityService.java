@@ -1,6 +1,6 @@
 package com.los.administration.security.service;
 
-import com.los.administration.security.model.FieldPermission;
+import com.los.administration.security.model.SecurityFieldPermission;
 import com.los.administration.security.repository.FieldPermissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,7 @@ public class FieldSecurityService {
 
     private final FieldPermissionRepository repository;
 
-    public Map<String, FieldPermission> getPermissions(
+    public Map<String, SecurityFieldPermission> getPermissions(
             String profileId,
             String object
     ) {
@@ -23,7 +23,7 @@ public class FieldSecurityService {
         return repository.findByProfileIdAndObjectName(profileId, object)
                 .stream()
                 .collect(Collectors.toMap(
-                        FieldPermission::getFieldName,
+                        SecurityFieldPermission::getFieldName,
                         fp -> fp
                 ));
     }

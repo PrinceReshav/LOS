@@ -54,7 +54,7 @@ public class UserCreatedEventListener {
          *        setupLink
         );*/
         log.info(
-                "PASSWORD_SETUP_INITIATED | userId={} | email={}",
+                "PASSWORD_SETUP_INITIATED | userId={} | email={} ",
                 event.userId(),
                 event.email()
         );

@@ -10,7 +10,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class ProfileService {
+public class    ProfileService {
 
     private final ProfileRepository profileRepository;
 

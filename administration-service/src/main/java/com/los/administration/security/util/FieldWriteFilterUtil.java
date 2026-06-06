@@ -1,6 +1,6 @@
 package com.los.administration.security.util;
 
-import com.los.administration.security.model.FieldPermission;
+import com.los.administration.security.model.SecurityFieldPermission;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
@@ -9,7 +9,7 @@ import java.util.Map;
 @Component
 public class FieldWriteFilterUtil {
 
-    public <T> void validateWrite(T dto, Map<String, FieldPermission> permissions) {
+    public <T> void validateWrite(T dto, Map<String, SecurityFieldPermission> permissions) {
 
         try {
             for (Field field : dto.getClass().getDeclaredFields()) {
@@ -22,7 +22,7 @@ public class FieldWriteFilterUtil {
 
                 String fieldName = field.getName();
 
-                FieldPermission perm = permissions.get(fieldName);
+                SecurityFieldPermission perm = permissions.get(fieldName);
 
                 if (perm == null) continue;
 

@@ -11,30 +11,65 @@ message EmployeeRequest {
 }
 
 message EmployeeResponse {
+
   string employeeId = 1;
   string userId = 2;
+
   string fullName = 3;
   string email = 4;
-  string roleId = 5;
-  string profileId = 6;
-  bool active = 7;
+  string mobile = 5;
+
+  string roleId = 6;
+  string roleName = 7;
+
+  string profileId = 8;
+  string profileName = 9;
+
+  bool active = 10;
+}
+
+message CreateEmployeeRequest {
+
+  string employeeId = 1;
+  string userId = 2;
+
+  string fullName = 3;
+  string email = 4;
+  string mobile = 5;
+
+  string roleId = 6;
+  string roleName = 7;
+
+  string profileId = 8;
+  string profileName = 9;
+}
+
+message CreateEmployeeResponse {
+
+  string employeeId = 1;
+  bool success = 2;
 }
 
 message UpdateEmployeeStatusRequest {
-  string userId = 1;
+
+  string employeeId = 1;
   bool active = 2;
 }
 
 message UpdateEmployeeStatusResponse {
+
   string employeeId = 1;
   bool active = 2;
 }
 
 service EmployeeService {
 
-  rpc GetEmployeeById (EmployeeRequest)
+  rpc GetEmployeeById(EmployeeRequest)
       returns (EmployeeResponse);
 
-  rpc UpdateEmployeeStatus (UpdateEmployeeStatusRequest)
+  rpc CreateEmployee(CreateEmployeeRequest)
+      returns (CreateEmployeeResponse);
+
+  rpc UpdateEmployeeStatus(UpdateEmployeeStatusRequest)
       returns (UpdateEmployeeStatusResponse);
 }

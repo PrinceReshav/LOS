@@ -1,5 +1,6 @@
 package com.los.losadminservice.branch.service;
 
+import com.los.losadminservice.branch.dto.BranchResponse;
 import com.los.losadminservice.branch.model.Branch;
 import com.los.losadminservice.branch.repository.BranchRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,5 +48,11 @@ public class BranchService {
     @Transactional(readOnly = true)
     public List<Branch> getAll(){
         return branchRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BranchResponse> getAllResponses() {
+
+        return branchRepository.findAllResponses();
     }
 }

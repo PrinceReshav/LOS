@@ -12,5 +12,8 @@ public record UserCreatedEvent(
         String firstName,
         String lastName,
         String roleId,
-        String profileId
+        String roleName,
+
+        String profileId,
+        String profileName
 ) implements Serializable {}

@@ -77,12 +77,33 @@ public class IncrementalVisibilityService {
                 );
 
         for (User manager : managers) {
-            save(manager.getUserId(), user.getUserId(), AccessType.ROLE_HIERARCHY);
+
+            if (
+                    manager.getUserId()
+                            .equals(user.getUserId())
+            ) {
+                continue;
+            }
+
+            save(
+                    manager.getUserId(),
+                    user.getUserId(),
+                    AccessType.ROLE_HIERARCHY
+            );
         }
     }
 
     private void save(String viewer, String target, AccessType type) {
-        try {
+
+        boolean exists =
+                visibilityRepository
+                        .existsByViewerUserIdAndTargetUserId(
+                                viewer,
+                                target
+                        );
+
+        if (!exists) {
+
             visibilityRepository.save(
                     UserVisibility.builder()
                             .viewerUserId(viewer)
@@ -90,9 +111,6 @@ public class IncrementalVisibilityService {
                             .accessType(type)
                             .build()
             );
-        } catch (DataIntegrityViolationException ignored) {
-            // duplicate → ignore
-
         }
     }
 }

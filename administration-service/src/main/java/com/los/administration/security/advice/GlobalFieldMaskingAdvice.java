@@ -1,7 +1,7 @@
 package com.los.administration.security.advice;
 
 import com.los.administration.auth.util.SecurityUtils;
-import com.los.administration.security.model.FieldPermission;
+import com.los.administration.security.model.SecurityFieldPermission;
 import com.los.administration.security.service.FieldSecurityService;
 import com.los.administration.security.util.FieldFilterUtil;
 import com.los.administration.user.model.User;
@@ -44,10 +44,21 @@ public class GlobalFieldMaskingAdvice implements ResponseBodyAdvice<Object> {
 
         if (body == null) return null;
 
-        String userId = SecurityUtils.getCurrentUserId();
+        String userId;
 
-        User currentUser = userRepository.findByUserId(userId).orElse(null);
-        if (currentUser == null) return body;
+        try {
+            userId = SecurityUtils.getCurrentUserId();
+        } catch (Exception ex) {
+            return body;
+        }
+
+        User currentUser =
+                userRepository.findByUserId(userId)
+                        .orElse(null);
+
+        if (currentUser == null) {
+            return body;
+        }
 
         String profileId = currentUser.getProfile().getProfileId();
 
@@ -112,7 +123,7 @@ public class GlobalFieldMaskingAdvice implements ResponseBodyAdvice<Object> {
 
         String objectName = resolveObjectName(dto);
 
-        Map<String, FieldPermission> permissions =
+        Map<String, SecurityFieldPermission> permissions =
                 fieldSecurityService.getPermissions(profileId, objectName);
 
         return fieldFilterUtil.filter(dto, permissions);

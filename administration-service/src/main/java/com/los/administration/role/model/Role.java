@@ -46,6 +46,28 @@ public class Role extends BaseEntity {
     @Column(name = "description", length = 255)
     private String description;
 
+    @Column(name = "hierarchy_level")
+    private Integer hierarchyLevel;
+
+    @Column(name = "system_defined", nullable = false)
+    private Boolean systemDefined;
+
     @Column(name = "active", nullable = false)
     private Boolean active;
+
+    @PrePersist
+    void onCreate(){
+
+        if(active == null){
+            active = true;
+        }
+
+        if(systemDefined == null){
+            systemDefined = false;
+        }
+
+        if(hierarchyLevel == null){
+            hierarchyLevel = 0;
+        }
+    }
 }

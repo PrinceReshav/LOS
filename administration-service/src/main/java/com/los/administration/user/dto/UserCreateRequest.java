@@ -34,4 +34,7 @@ public class UserCreateRequest {
 
     @NotBlank
     private String profileName;
+
+
+    private String licenseType;
 }

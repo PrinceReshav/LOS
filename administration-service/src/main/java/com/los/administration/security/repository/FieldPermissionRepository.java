@@ -1,14 +1,14 @@
 package com.los.administration.security.repository;
 
-import com.los.administration.security.model.FieldPermission;
+import com.los.administration.security.model.SecurityFieldPermission;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
 public interface FieldPermissionRepository
-        extends JpaRepository<FieldPermission, Long> {
+        extends JpaRepository<SecurityFieldPermission, Long> {
 
-    List<FieldPermission> findByProfileIdAndObjectName(
+    List<SecurityFieldPermission> findByProfileIdAndObjectName(
             String profileId,
             String objectName
     );

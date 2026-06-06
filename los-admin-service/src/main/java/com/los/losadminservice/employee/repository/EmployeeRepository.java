@@ -23,8 +23,19 @@ WHERE e.managerEmployeeId IS NOT NULL
 
     List<Employee> findByEmployeeIdContainingIgnoreCase(String employeeId);
 
+    List<Employee>
+    findByEmployeeIdContainingIgnoreCaseOrFullNameContainingIgnoreCase(
+            String employeeId,
+            String fullName
+    );
+
+    List<Employee> findByManagerEmployeeId(
+            String managerEmployeeId
+    );
+
     Optional<Employee> findByUserId(String userId);
 
-    long countByBranchIdAndRoleId(String branchId,String roleId);
+
+
 
 }

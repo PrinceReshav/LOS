@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Permission {
+public class SecurityPermission {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

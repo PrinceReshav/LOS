@@ -55,6 +55,19 @@ public class AuthController {
         return ApiResponse.success(null, "If the account exists, a reset link has been sent");
     }
 
+    @PostMapping("/password/change")
+    public ApiResponse<Void> changePassword(
+            @RequestBody @Valid ChangePasswordRequest request
+    ) {
+
+        authService.changePassword(request);
+
+        return ApiResponse.success(
+                null,
+                "Password changed successfully"
+        );
+    }
+
 
 
 }

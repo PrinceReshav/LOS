@@ -1,5 +1,6 @@
 package com.los.administration.user.mapper;
 
+
 import com.los.administration.profile.model.Profile;
 import com.los.administration.role.model.Role;
 import com.los.administration.user.dto.UserResponse;
@@ -23,6 +24,7 @@ public final class UserMapper {
                 .employeeId(user.getEmployeeId())
                 .roleName(role.getRoleName())
                 .profileName(profile.getProfileName())
+                .licenseType(user.getLicenseType())
                 .active(user.getActive())
                 .build();
     }

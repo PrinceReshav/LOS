@@ -1,6 +1,7 @@
 package com.los.administration.user.model;
 
 import com.los.administration.common.audit.BaseEntity;
+import com.los.administration.license.model.UserLicenseType;
 import com.los.administration.profile.model.Profile;
 import com.los.administration.role.model.Role;
 import jakarta.persistence.*;
@@ -86,6 +87,9 @@ public class User extends BaseEntity {
     @JoinColumn(name = "profile_id", nullable = false)
     private Profile profile;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "license_type", nullable = false)
+    private UserLicenseType licenseType;
 
     // ===== Lifecycle =====
     @Column(nullable = false)
@@ -98,6 +102,7 @@ public class User extends BaseEntity {
 
     @Column(name = "updated_by")
     private String updatedByUserId;
+
 
 
 

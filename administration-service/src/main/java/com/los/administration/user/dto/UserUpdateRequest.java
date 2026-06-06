@@ -12,8 +12,8 @@ public class UserUpdateRequest {
     private String middleName;
     private String lastName;
 
-    private String roleName;     // 🔥 sensitive
-    private String profileName;  // 🔥 sensitive
+    private String roleName;
+    private String profileName;
 
     private Boolean active;
 }

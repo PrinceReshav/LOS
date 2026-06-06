@@ -8,12 +8,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "profile_permissions")
+@Table(name = "securityProfile_permissions")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProfilePermission {
+public class SecurityProfilePermission {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

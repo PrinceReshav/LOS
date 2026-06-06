@@ -9,7 +9,12 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "outbox_events",
-        indexes = @Index(name = "idx_outbox_published", columnList = "published")
+        indexes = {
+                @Index(
+                        name = "idx_outbox_status",
+                        columnList = "status"
+                )
+        }
 )
 @Getter
 @Setter
@@ -28,10 +33,28 @@ public class OutboxEvent {
     @Column(columnDefinition = "TEXT")
     private String payload;
 
-    @Column(name = "retry_count")
     private int retryCount;
 
-    private boolean published = false;
+    @Enumerated(EnumType.STRING)
+    private OutboxStatus status;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    void onCreate() {
+
+        createdAt = LocalDateTime.now();
+        updatedAt = createdAt;
+
+        if(status == null){
+            status = OutboxStatus.PENDING;
+        }
+    }
+
+    @PreUpdate
+    void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

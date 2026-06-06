@@ -1,5 +1,6 @@
 package com.los.losadminservice.employee.controller;
 
+import com.los.losadminservice.employee.dto.EmployeeTeamResponse;
 import com.los.losadminservice.employee.model.Employee;
 import com.los.losadminservice.employee.repository.EmployeeRepository;
 import com.los.losadminservice.employee.service.EmployeeService;
@@ -7,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.los.losadminservice.employee.dto.EmployeeHierarchyResponse;
+
 
 @RestController
 @RequestMapping("/admin/employees")
@@ -32,11 +35,18 @@ public class EmployeeController {
     }
 
     // Search managers (autocomplete)
-    @GetMapping("/search")
+    @GetMapping("/search/search-managers")
     public List<Employee> searchManagers(
             @RequestParam String employeeId
     ){
         return employeeService.searchManagers(employeeId);
+    }
+
+    @GetMapping("/search/search-employee")
+    public List<Employee> search(
+            @RequestParam String q
+    ){
+        return employeeService.searchEmployee(q);
     }
 
     // Assign manager
@@ -53,5 +63,23 @@ public class EmployeeController {
                 managerEmployeeId
         );
 
+    }
+
+    @GetMapping("/hierarchy")
+    public EmployeeHierarchyResponse hierarchy() {
+
+        return employeeService.getHierarchyTree();
+    }
+
+    @GetMapping("/{employeeId}/team")
+    public EmployeeTeamResponse team(
+
+            @PathVariable
+            String employeeId
+
+    ) {
+
+        return employeeService
+                .getTeam(employeeId);
     }
 }

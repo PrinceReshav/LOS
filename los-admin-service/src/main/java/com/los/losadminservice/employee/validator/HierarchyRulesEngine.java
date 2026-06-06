@@ -15,15 +15,6 @@ public class HierarchyRulesEngine {
             Employee employee,
             String managerEmployeeId
     ){
-
-        if(employee.getBranchId() != null){
-            branchCapacityValidator
-                    .validateBranchCapacity(
-                            employee.getBranchId(),
-                            employee.getRoleId()
-                    );
-        }
-
         if(managerEmployeeId != null){
             employeeHierarchyValidator
                     .validateManagerAssignment(

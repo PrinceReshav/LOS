@@ -10,9 +10,64 @@ import net.devh.boot.grpc.server.service.GrpcService;
 
 @GrpcService
 @RequiredArgsConstructor
-public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImplBase {
+public class EmployeeGrpcService
+        extends EmployeeServiceGrpc.EmployeeServiceImplBase {
 
     private final EmployeeRepository employeeRepository;
+
+    @Override
+    public void createEmployee(
+            CreateEmployeeRequest request,
+            StreamObserver<CreateEmployeeResponse> responseObserver
+    ) {
+
+        if (
+                employeeRepository.existsByEmployeeId(
+                        request.getEmployeeId()
+                )
+                        ||
+                        employeeRepository.existsByUserId(
+                                request.getUserId()
+                        )
+        ) {
+
+            throw Status.ALREADY_EXISTS
+                    .withDescription(
+                            "Employee already exists"
+                    )
+                    .asRuntimeException();
+        }
+
+        Employee employee = Employee.builder()
+
+                .employeeId(request.getEmployeeId())
+                .userId(request.getUserId())
+
+                .fullName(request.getFullName())
+                .email(request.getEmail())
+                .mobile(request.getMobile())
+
+                .roleId(request.getRoleId())
+                .roleName(request.getRoleName())
+
+                .profileId(request.getProfileId())
+                .profileName(request.getProfileName())
+
+                .active(true)
+
+                .build();
+
+        employeeRepository.save(employee);
+
+        CreateEmployeeResponse response =
+                CreateEmployeeResponse.newBuilder()
+                        .setEmployeeId(employee.getEmployeeId())
+                        .setSuccess(true)
+                        .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
 
     @Override
     public void getEmployeeById(
@@ -22,17 +77,65 @@ public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImpl
 
         Employee employee = employeeRepository
                 .findByEmployeeId(request.getEmployeeId())
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() ->
+                        Status.NOT_FOUND
+                                .withDescription("Employee not found")
+                                .asRuntimeException()
+                );
 
-        EmployeeResponse response = EmployeeResponse.newBuilder()
-                .setEmployeeId(employee.getEmployeeId())
-                .setUserId(employee.getUserId())
-                .setFullName(employee.getFullName())
-                .setEmail(employee.getEmail())
-                .setRoleId(employee.getRoleId())
-                .setProfileId(employee.getProfileId())
-                .setActive(employee.getActive())
-                .build();
+        EmployeeResponse response =
+                EmployeeResponse.newBuilder()
+
+                        .setEmployeeId(employee.getEmployeeId())
+                        .setUserId(employee.getUserId())
+
+                        .setFullName(
+                                employee.getFullName() != null
+                                        ? employee.getFullName()
+                                        : ""
+                        )
+
+                        .setEmail(
+                                employee.getEmail() != null
+                                        ? employee.getEmail()
+                                        : ""
+                        )
+
+                        .setMobile(
+                                employee.getMobile() != null
+                                        ? employee.getMobile()
+                                        : ""
+                        )
+
+                        .setRoleId(
+                                employee.getRoleId() != null
+                                        ? employee.getRoleId()
+                                        : ""
+                        )
+
+                        .setRoleName(
+                                employee.getRoleName() != null
+                                        ? employee.getRoleName()
+                                        : ""
+                        )
+
+                        .setProfileId(
+                                employee.getProfileId() != null
+                                        ? employee.getProfileId()
+                                        : ""
+                        )
+
+                        .setProfileName(
+                                employee.getProfileName() != null
+                                        ? employee.getProfileName()
+                                        : ""
+                        )
+
+                        .setActive(
+                                Boolean.TRUE.equals(employee.getActive())
+                        )
+
+                        .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
@@ -45,23 +148,29 @@ public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImpl
     ) {
 
         Employee employee = employeeRepository
-                .findByUserId(request.getUserId())
+                .findByEmployeeId(
+                        request.getEmployeeId()
+                )
                 .orElseThrow(() ->
                         Status.NOT_FOUND
                                 .withDescription("Employee not found")
                                 .asRuntimeException()
                 );
 
-        // idempotent update
-        if (employee.getActive() != request.getActive()) {
+        if (!Boolean.valueOf(request.getActive())
+                .equals(employee.getActive())) {
+
             employee.setActive(request.getActive());
+
             employeeRepository.save(employee);
         }
 
         UpdateEmployeeStatusResponse response =
                 UpdateEmployeeStatusResponse.newBuilder()
                         .setEmployeeId(employee.getEmployeeId())
-                        .setActive(employee.getActive())
+                        .setActive(
+                                Boolean.TRUE.equals(employee.getActive())
+                        )
                         .build();
 
         responseObserver.onNext(response);

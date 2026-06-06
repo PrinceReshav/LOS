@@ -30,25 +30,6 @@ public class UserSpecification {
                         cb.equal(root.get("profile").get("profileName"), profileName);
     }
 
-
-    /*
-    *public static Specification<User> visibleTo(User currentUser) {
-
-        return (root, query, cb) -> {
-
-            // ROOT → no restriction
-            if (currentUser.getRole().getRoleType() == RoleType.ROOT) {
-                return cb.conjunction();
-            }
-
-            // Only same role or subordinates
-            return cb.or(
-                    cb.equal(root.get("role"), currentUser.getRole())
-                    // later add hierarchy logic
-            );
-        };
-    }*/
-
     public static Specification<User> activeEquals(Boolean active) {
         return (root, query, cb) ->
                 active == null ? null :

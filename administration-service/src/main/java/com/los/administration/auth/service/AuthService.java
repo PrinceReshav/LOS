@@ -21,6 +21,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.los.administration.auth.dto.ChangePasswordRequest;
+import com.los.administration.auth.util.SecurityUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -62,11 +64,13 @@ public class AuthService {
                                 .build()
                 );
 
-        credential.setPasswordHash(
-                passwordEncoder.encode(request.getNewPassword())
-        );
-        credential.setPasswordSet(true);
 
+        credential.setPasswordSet(true);
+        credential.setPasswordHash(
+                passwordEncoder.encode(
+                        request.getNewPassword()
+                )
+        );
         credentialRepository.save(credential);
         token.markUsed();
 
@@ -97,12 +101,46 @@ public class AuthService {
                 .orElseThrow(() ->
                         new BadRequestException("PASSWORD_NOT_SET"));
 
+        System.out.println(
+                "PASSWORD MATCH = " +
+                        passwordEncoder.matches(
+                                request.getPassword(),
+                                credential.getPasswordHash()
+                        )
+        );
+
+        // AuthService.login()
+        if (!credential.getActive()) {
+            throw new BadRequestException("ACCOUNT_LOCKED");
+        }
+
         if (!passwordEncoder.matches(
                 request.getPassword(),
                 credential.getPasswordHash()
         )) {
             throw new BadRequestException("INVALID_CREDENTIALS");
         }
+
+        System.out.println("INPUT PASSWORD = " + request.getPassword());
+
+        System.out.println(
+                "PASSWORD MATCH = " +
+                        passwordEncoder.matches(
+                                request.getPassword(),
+                                credential.getPasswordHash()
+                        )
+        );
+
+        System.out.println(
+                "HASH IN DB = " +
+                        credential.getPasswordHash()
+        );
+        System.out.println("USER FOUND = " + user.getUsername());
+        System.out.println("USER ACTIVE = " + user.getActive());
+
+        System.out.println("CREDENTIAL FOUND");
+        System.out.println("CREDENTIAL ACTIVE = " + credential.getActive());
+        System.out.println("PASSWORD SET = " + credential.getPasswordSet());
 
         Role role = user.getRole();
         if (role == null) {
@@ -119,9 +157,83 @@ public class AuthService {
         return LoginResponse.builder()
                 .userId(user.getUserId())
                 .username(user.getUsername())
+
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+
+                .profile(
+                        user.getProfile() != null
+                                ? user.getProfile().getProfileName()
+                                : null
+                )
+
                 .role(role.getRoleName())
                 .token(jwt)
                 .build();
+    }
+
+    @Transactional
+    public void changePassword(ChangePasswordRequest request) {
+
+        String userId =
+                SecurityUtils.getCurrentUserId();
+
+        Credential credential =
+                credentialRepository
+                        .findByUserId(userId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Credential not found"
+                                ));
+
+        if (!credential.getActive()) {
+
+            throw new BadRequestException(
+                    "ACCOUNT_LOCKED"
+            );
+
+        }
+
+        boolean validCurrentPassword =
+                passwordEncoder.matches(
+                        request.getCurrentPassword(),
+                        credential.getPasswordHash()
+                );
+
+        if (!validCurrentPassword) {
+
+            throw new BadRequestException(
+                    "INVALID_CURRENT_PASSWORD"
+            );
+
+        }
+
+        if (passwordEncoder.matches(
+                request.getNewPassword(),
+                credential.getPasswordHash()
+        )) {
+
+            throw new BadRequestException(
+                    "NEW_PASSWORD_MUST_BE_DIFFERENT"
+            );
+
+        }
+
+        String newPassword =
+                request.getNewPassword();
+
+        if (!newPassword.matches(
+                "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@#$%^&+=!]).{8,}$"
+        )) {
+
+            throw new BadRequestException(
+                    "PASSWORD_TOO_WEAK"
+            );
+
+        }
+
+        credentialRepository.save(credential);
+
     }
 
     // ---------- FORGOT PASSWORD (USER) ----------

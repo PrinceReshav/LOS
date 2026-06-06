@@ -7,7 +7,7 @@ import com.los.administration.profile.model.Profile;
 import com.los.administration.profile.repository.ProfileRepository;
 import com.los.administration.role.model.Role;
 import com.los.administration.role.repository.RoleRepository;
-import com.los.administration.security.model.FieldPermission;
+import com.los.administration.security.model.SecurityFieldPermission;
 import com.los.administration.security.service.FieldSecurityService;
 import com.los.administration.security.util.FieldFilterUtil;
 import com.los.administration.security.util.FieldWriteFilterUtil;
@@ -18,6 +18,7 @@ import com.los.administration.user.bulk.BulkUserUploadResult;
 import com.los.administration.user.bulk.dto.BulkUploadPreviewResponse;
 import com.los.administration.user.bulk.dto.BulkUploadPreviewRow;
 import com.los.administration.user.dto.UserCreateRequest;
+import com.los.administration.user.dto.UserProfileResponse;
 import com.los.administration.user.dto.UserResponse;
 import com.los.administration.user.dto.UserUpdateRequest;
 import com.los.administration.user.mapper.UserMapper;
@@ -95,7 +96,7 @@ public class UserService {
             }
         }
 
-        Map<String, FieldPermission> permissions =
+        Map<String, SecurityFieldPermission> permissions =
                 fieldSecurityService.getPermissions(profileId, "USER");
 
         // 🔥 WRITE VALIDATION
@@ -151,26 +152,17 @@ public class UserService {
         } catch (Exception ex) {
             throw new RuntimeException("Employee service unavailable", ex);
         }
-        Role role = roleRepository.findByRoleId(user.getRole().getRoleId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                String.format("Role not found for user: %s", userId))
-                );
 
-        Profile profile = profileRepository.findByProfileId(user.getProfile().getProfileId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                String.format("Profile not found for user: %s", userId))
-                );
-
+        Role role = getRole(user);
+        Profile profile = getProfile(user);
         log.info("USER ACTIVATED | userId={}", userId);
         incrementalVisibilityService.onUserActivated(user);
 
 
         UserResponse response = toResponse(user, role, profile);
 
-        Map<String, FieldPermission> permissions = getCurrentUserPermissions();
-
+        Map<String, SecurityFieldPermission> permissions =
+                getCurrentUserPermissions();
         return fieldFilterUtil.filter(response, permissions);
     }
 
@@ -192,17 +184,10 @@ public class UserService {
         } catch (Exception ex) {
             throw new RuntimeException("Employee service unavailable", ex);
         }
-        Role role = roleRepository.findByRoleId(user.getRole().getRoleId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                String.format("Role not found for user: %s", userId))
-                );
 
-        Profile profile = profileRepository.findByProfileId(user.getProfile().getProfileId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                String.format("Profile not found for user: %s", userId))
-                );
+
+        Role role = getRole(user);
+        Profile profile = getProfile(user);
 
         log.info("USER DEACTIVATED | userId={}", userId);
         incrementalVisibilityService.onUserDeactivated(user);
@@ -216,10 +201,10 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
 
         String profileId = currentUser.getProfile().getProfileId();
+        fieldSecurityService.getPermissions(profileId, "USER");
 
-        Map<String, FieldPermission> permissions =
-                fieldSecurityService.getPermissions(profileId, "USER");
-
+        Map<String, SecurityFieldPermission> permissions =
+                getCurrentUserPermissions();
         return fieldFilterUtil.filter(response, permissions);
     }
 
@@ -237,6 +222,7 @@ public class UserService {
                 .employeeId(user.getEmployeeId())
                 .roleName(role.getRoleName())
                 .profileName(profile.getProfileName())
+                .licenseType(user.getLicenseType())
                 .active(user.getActive())
                 .build();
     }
@@ -254,7 +240,7 @@ public class UserService {
 
         String currentUserId = SecurityUtils.getCurrentUserId();
 
-        Map<String, FieldPermission> permissions = getCurrentUserPermissions();
+        Map<String, SecurityFieldPermission> permissions = getCurrentUserPermissions();
 
         username = normalize(username);
         roleName = normalize(roleName);
@@ -494,7 +480,7 @@ public class UserService {
                 .build();
     }
 
-    private Map<String, FieldPermission> getCurrentUserPermissions() {
+    private Map<String, SecurityFieldPermission> getCurrentUserPermissions() {
 
         String currentUserId = SecurityUtils.getCurrentUserId();
 
@@ -509,4 +495,77 @@ public class UserService {
     private String normalize(String value) {
         return (value == null || value.isBlank()) ? null : value.trim();
     }
+
+    private Role getRole(User user) {
+
+        return roleRepository.findByRoleId(
+                user.getRole().getRoleId()
+        ).orElseThrow(() ->
+                new ResourceNotFoundException(
+                        String.format(
+                                "Role not found for user: %s",
+                                user.getUserId()
+                        )
+                )
+        );
+    }
+
+    private Profile getProfile(User user) {
+
+        return profileRepository.findByProfileId(
+                user.getProfile().getProfileId()
+        ).orElseThrow(() ->
+                new ResourceNotFoundException(
+                        String.format(
+                                "Profile not found for user: %s",
+                                user.getUserId()
+                        )
+                )
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public UserProfileResponse getMyProfile() {
+
+        String userId =
+                SecurityUtils.getCurrentUserId();
+
+        User user =
+                userRepository.findByUserId(userId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "User not found"
+                                ));
+
+        return UserProfileResponse.builder()
+                .userId(user.getUserId())
+                .username(user.getUsername())
+
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+
+                .email(user.getEmail())
+                .mobile(user.getMobile())
+
+                .employeeId(user.getEmployeeId())
+
+                .role(
+                        user.getRole() != null
+                                ? user.getRole().getRoleName()
+                                : null
+                )
+
+                .profile(
+                        user.getProfile() != null
+                                ? user.getProfile().getProfileName()
+                                : null
+                )
+
+                .active(user.getActive())
+
+                .build();
+    }
+
+
+
 }

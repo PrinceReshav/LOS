@@ -6,6 +6,7 @@ import com.los.administration.user.bulk.BulkUserUploadResult;
 import com.los.administration.user.bulk.dto.BulkUploadPreviewResponse;
 import com.los.administration.user.bulk.store.BulkUploadErrorStore;
 import com.los.administration.user.dto.UserCreateRequest;
+import com.los.administration.user.dto.UserProfileResponse;
 import com.los.administration.user.dto.UserResponse;
 import com.los.administration.user.dto.UserUpdateRequest;
 import com.los.administration.user.service.UserService;
@@ -152,6 +153,18 @@ public class UserController {
                 );
 
         return ApiResponse.success(result, "Users fetched successfully");
+    }
+
+
+    @PreAuthorize("isAuthenticated()")
+    @RequiresPermission(object = "USER", action = "READ")
+    @GetMapping("/me")
+    public ApiResponse<UserProfileResponse> getMyProfile() {
+
+        return ApiResponse.success(
+                userService.getMyProfile(),
+                "Profile fetched successfully"
+        );
     }
 
 }

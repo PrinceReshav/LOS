@@ -75,4 +75,10 @@ public class BranchHandler {
                 branchService.update(branch)
         );
     }
+
+
+    public List<BranchResponse> getAll() {
+
+        return branchService.getAllResponses();
+    }
 }
