@@ -6,6 +6,7 @@ import com.los.administration.common.exception.ResourceNotFoundException;
 import com.los.administration.profile.model.Profile;
 import com.los.administration.profile.repository.ProfileRepository;
 import com.los.administration.role.model.Role;
+import com.los.administration.role.model.RoleType;
 import com.los.administration.role.repository.RoleRepository;
 import com.los.administration.security.model.SecurityFieldPermission;
 import com.los.administration.security.service.FieldSecurityService;
@@ -240,6 +241,10 @@ public class UserService {
 
         String currentUserId = SecurityUtils.getCurrentUserId();
 
+        User currentUser = userRepository.findByUserId(currentUserId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Current user not found"));
+
         Map<String, SecurityFieldPermission> permissions = getCurrentUserPermissions();
 
         username = normalize(username);
@@ -259,6 +264,23 @@ public class UserService {
                 startsWith,
                 active
         );
+
+        if (currentUser.getRole().getRoleType() == RoleType.ROOT
+                || "ADMIN".equalsIgnoreCase(currentUser.getRole().getRoleName())) {
+
+            return userRepository.findAll(pageable)
+                    .map(user -> {
+
+                        UserResponse dto =
+                                UserMapper.toResponse(
+                                        user,
+                                        user.getRole(),
+                                        user.getProfile()
+                                );
+
+                        return fieldFilterUtil.filter(dto, permissions);
+                    });
+        }
 
         return userRepository.findVisibleUsersWithFilters(
                 currentUserId,

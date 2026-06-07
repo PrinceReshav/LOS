@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
 
                 // Enable CORS
-                .cors(cors -> {})
+                //.cors(cors -> {})
 
                 // Required for H2 console
                 .headers(headers ->
@@ -63,11 +63,12 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers(
                                 "/auth/login",
-                                "/auth/password/**",
+                                "/auth/password/setup",
+                                "/auth/password/forgot",
+                                "/auth/validate",
                                 "/internal/bootstrap/**",
                                 "/h2-console/**"
                         ).permitAll()
-
                         // Everything else secured
                         .anyRequest().authenticated()
                 )
