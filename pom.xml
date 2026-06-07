@@ -18,6 +18,7 @@
         <module>administration-service</module>
         <module>los-admin-service</module>
         <module>loan-originating-system</module>
+        <module>api-gateway</module>
 
     </modules>
 

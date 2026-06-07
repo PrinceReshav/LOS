@@ -231,6 +231,11 @@ public class AuthService {
             );
 
         }
+        credential.setPasswordHash(
+                passwordEncoder.encode(
+                        request.getNewPassword()
+                )
+        );
 
         credentialRepository.save(credential);
 

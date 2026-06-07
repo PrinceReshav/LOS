@@ -35,7 +35,7 @@ public class UserCreatedEventListener {
         );
 
         String setupLink = String.format(
-                "https://los.company.com/password/setup?token=%s",
+                "http://localhost:5173/password/setup?token=%s",
                 token
         );
 
