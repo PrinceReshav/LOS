@@ -5,7 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
-@Entity
+@Entity(name = "LoanTenureConfigV2")
 @Table(name = "loan_tenure_config")
 @Data
 public class LoanTenureConfig {

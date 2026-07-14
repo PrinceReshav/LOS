@@ -1,6 +1,6 @@
 package com.los.loanoriginatingsystem.rules.engine.criteria;
 
-import com.los.loanoriginatingsystem.rules.engine.eval.ExpressionEvaluator;
+import com.los.loanoriginatingsystem.rules.engine.eval.RuleExpressionEvaluator;
 import com.los.loanoriginatingsystem.rules.model.CriteriaResult;
 import com.los.loanoriginatingsystem.rules.util.FieldExtractor;
 import com.los.loanoriginatingsystem.rules.entity.RuleCriteria;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 public class CriteriaEvaluator {
 
     private final FieldExtractor fieldExtractor;
-    private final ExpressionEvaluator expressionEvaluator;
+    private final RuleExpressionEvaluator expressionEvaluator;
 
     public CriteriaResult evaluate(Object entity, RuleCriteria criteria) {
 

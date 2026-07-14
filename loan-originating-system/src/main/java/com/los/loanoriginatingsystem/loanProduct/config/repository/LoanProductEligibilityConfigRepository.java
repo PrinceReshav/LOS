@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface LoanEligibilityConfigRepository
+public interface LoanProductEligibilityConfigRepository
         extends JpaRepository<LoanEligibilityConfig, String> {
 
     List<LoanEligibilityConfig> findByProductCodeAndLoanTypeAndLoanScheme(

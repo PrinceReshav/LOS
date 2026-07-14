@@ -1,0 +1,4 @@
+DELETE FROM lead_sequence;
+
+INSERT INTO lead_sequence(NAME, SEQUENCE_VALUE)
+VALUES ('LEAD', 0);

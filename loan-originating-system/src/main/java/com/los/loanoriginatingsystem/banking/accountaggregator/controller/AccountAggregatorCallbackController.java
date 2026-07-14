@@ -1,4 +1,7 @@
-package com.los.loanoriginatingsystem.banking.accountaggregator.controller;
+/*
+*
+* package com.los.loanoriginatingsystem.banking.accountaggregator.controller;
+
 
 import com.los.loanoriginatingsystem.banking.accountaggregator.dto.AACallbackDTO;
 import com.los.loanoriginatingsystem.banking.accountaggregator.service.AccountAggregatorCallbackService;
@@ -24,3 +27,4 @@ public class AccountAggregatorCallbackController {
         callbackService.handleCallback(wrapper);
     }
 }
+ */

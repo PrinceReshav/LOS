@@ -1,9 +1,9 @@
+/*
 package com.los.loanoriginatingsystem.banking.bankstatement.controller;
+ *
 
 import com.los.loanoriginatingsystem.banking.bankstatement.service.BankStatementService;
 import com.los.loanoriginatingsystem.banking.bankstatement.service.BankStatementUpdateService;
-import com.los.loanoriginatingsystem.document.dto.BankStatementDocDTO;
-import com.los.loanoriginatingsystem.document.service.BankStatementDocumentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,8 +15,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BankStatementController {
 
-    private final BankStatementDocumentService documentService;
-    private final BankStatementUpdateService updateService;
+  //  private final BankStatementDocumentService documentService;
+  //  private final BankStatementUpdateService updateService;
     private final BankStatementService bankStatementService;
 
 
@@ -48,3 +48,4 @@ public class BankStatementController {
         );
     }
 }
+*/

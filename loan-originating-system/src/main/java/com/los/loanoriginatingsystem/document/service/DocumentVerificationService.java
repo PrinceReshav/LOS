@@ -1,5 +1,17 @@
 package com.los.loanoriginatingsystem.document.service;
 
+import com.los.loanoriginatingsystem.document.dto.DocumentVerificationResponse;
+
+public interface DocumentVerificationService {
+
+    DocumentVerificationResponse verify(
+            String documentId
+    );
+}
+
+/*
+*package com.los.loanoriginatingsystem.document.service;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.los.loanoriginatingsystem.document.entity.Document;
 import com.los.loanoriginatingsystem.document.repository.DocumentRepository;
@@ -88,4 +100,4 @@ public class DocumentVerificationService {
 
         return response;
     }
-}
+}*/

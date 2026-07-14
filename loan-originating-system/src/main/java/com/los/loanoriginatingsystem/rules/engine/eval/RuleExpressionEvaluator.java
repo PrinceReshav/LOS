@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 
 @Component
-public class ExpressionEvaluator {
+public class RuleExpressionEvaluator {
 
     public boolean evaluate(Object left, Object right, String operatorStr) {
 

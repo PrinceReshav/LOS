@@ -8,6 +8,7 @@ import com.los.loanoriginatingsystem.temp.repository.TempLoanApplicationReposito
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.los.loanoriginatingsystem.temp.enums.ApplicationStage;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +42,10 @@ public class ApplicantSaveService {
         // 🔥 CONTACT
         // =============================
         applicant.setEmail(req.getEmail());
+        applicant.setMobileNumber(
+                temp.getMobile()
+                        .getMobileNumber()
+        );
         applicant.setAlternateMobileNumber(req.getAlternateMobile());
 
         // =============================
@@ -53,19 +58,15 @@ public class ApplicantSaveService {
         applicant.setCaste(req.getCaste());
         applicant.setCustomerCategory(req.getCustomerCategory());
 
-        // =============================
-        // 🔥 ADDRESS (CURRENT)
-        // =============================
-        applicant.setHouse(req.getHouse());
-        applicant.setStreet(req.getStreet());
-        applicant.setDistrict(req.getDistrict());
-        applicant.setState(req.getState());
-        applicant.setPincode(req.getPincode());
 
         // =============================
         // 🔥 FINAL FLAG
         // =============================
         temp.setIsApplicantCompleted(true);
+
+        temp.setCurrentStage(
+                ApplicationStage.REVIEW
+        );
 
         repository.save(temp);
     }

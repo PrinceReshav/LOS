@@ -1,5 +1,6 @@
 package com.los.loanoriginatingsystem.rules.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -15,6 +16,7 @@ public class RuleCriteria {
     private String ruleEngineId;
     private String fieldName;
     private String operator;
+    @Column(name = "criteria_value")
     private String value;
     private Boolean fieldCompare;
     private Integer sequence;

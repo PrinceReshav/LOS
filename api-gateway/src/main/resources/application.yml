@@ -40,45 +40,24 @@ spring:
           predicates:
             - Path=/auth/**
 
-        - id: user-service
+        - id: administration-service
           uri: http://localhost:8080
           predicates:
-            - Path=/users/**,/admin/users/**
+            - Path=/users/**,/admin/users/**,/admin/roles/**,/admin/profiles/**
           filters:
             - JwtValidation
 
-        - id: role-service
-          uri: http://localhost:8080
-          predicates:
-            - Path=/admin/roles/**
-          filters:
-            - JwtValidation
-
-        - id: profile-service
-          uri: http://localhost:8080
-          predicates:
-            - Path=/admin/profiles/**
-          filters:
-            - JwtValidation
-
-        - id: employee-service
+        - id: los-admin-service
           uri: http://localhost:8081
           predicates:
-            - Path=/admin/employees/**
+            - Path=/admin/employees/**,/admin/branches/**,/admin/employee-branch-mappings/**
           filters:
             - JwtValidation
 
-        - id: branch-service
-          uri: http://localhost:8081
+        - id: los-service
+          uri: http://localhost:8082
           predicates:
-            - Path=/admin/branches/**
-          filters:
-            - JwtValidation
-
-        - id: employee-branch-mapping-service
-          uri: http://localhost:8081
-          predicates:
-            - Path=/admin/employee-branch-mappings/**
+            - Path=/api/**
           filters:
             - JwtValidation
 

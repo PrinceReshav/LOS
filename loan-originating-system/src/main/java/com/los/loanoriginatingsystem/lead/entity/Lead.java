@@ -77,4 +77,11 @@ public class Lead {
     private String loanApplicationId;
 
     private Boolean isConverted = false;
+
+    // =============================
+    // OWNER
+    // =============================
+    private String ownerId;
+
+    private String ownerName;
 }

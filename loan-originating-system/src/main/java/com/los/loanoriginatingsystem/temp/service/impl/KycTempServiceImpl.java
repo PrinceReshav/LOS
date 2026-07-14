@@ -13,6 +13,7 @@ import com.los.loanoriginatingsystem.kyc.voterid.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.los.loanoriginatingsystem.temp.enums.ApplicationStage;
 
 @Service
 @RequiredArgsConstructor
@@ -32,15 +33,6 @@ public class KycTempServiceImpl implements KycTempService {
 
     private void save(TempLoanApplication temp) {
         repo.save(temp);
-    }
-
-    private void markKycCompleted(TempLoanApplication temp) {
-        if (Boolean.TRUE.equals(temp.getAadhaar().getVerified())
-                && Boolean.TRUE.equals(temp.getPan().getVerified())
-                && Boolean.TRUE.equals(temp.getLiveness().getVerified())) {
-
-            temp.setIsKycCompleted(true);
-        }
     }
 
     private void updateKycCompletion(TempLoanApplication temp) {
@@ -107,7 +99,9 @@ public class KycTempServiceImpl implements KycTempService {
             temp.getAadhaar().setOcrGender(field.getGender().getValue());
             temp.getAadhaar().setOcrAadhaarNumber(field.getAadhaarNumber().getValue());
 
-            temp.setAadhaarStatus(KycStatus.SUCCESS);
+            temp.setAadhaarStatus(
+                    KycStatus.IN_PROGRESS
+            );
 
             save(temp);
 
@@ -141,7 +135,6 @@ public class KycTempServiceImpl implements KycTempService {
             temp.getAadhaar().setVerifiedAadhaarNumber(data.getAadhaarNumber());
             temp.getAadhaar().setVerifiedDob(data.getDob());
             temp.getAadhaar().setVerifiedGender(data.getGender());
-            temp.getAadhaar().setVerified(true);
 
             if (data.getAddress() != null) {
                 var addr = data.getAddress();
@@ -149,10 +142,19 @@ public class KycTempServiceImpl implements KycTempService {
                 temp.getAadhaar().setStreet(addr.getStreet());
                 temp.getAadhaar().setDistrict(addr.getDist());
                 temp.getAadhaar().setState(addr.getState());
-                temp.getAadhaar().setPincode(addr.getCountry());
+                temp.getAadhaar().setPincode(addr.getPincode());
             }
 
-            temp.setAadhaarStatus(KycStatus.SUCCESS);
+
+            temp.getAadhaar().setVerified(true);
+
+
+            temp.setAadhaarStatus(
+                    KycStatus.SUCCESS
+            );
+            temp.setCurrentStage(
+                    ApplicationStage.PAN_VERIFICATION
+            );
 
             updateKycCompletion(temp);
             save(temp);
@@ -170,19 +172,6 @@ public class KycTempServiceImpl implements KycTempService {
         }
     }
 
-    @Override
-    public void verifyAadhaar(String tempId, AadhaarVerificationResponseDTO dto) {
-
-        TempLoanApplication temp = get(tempId);
-
-        temp.getAadhaar().setVerified(true);
-        temp.getAadhaar().setVerifiedGender(dto.getData().getGender());
-        temp.getAadhaar().setVerifiedAadhaarNumber(dto.getData().getAadhaarNumber());
-
-        markKycCompleted(temp);
-        save(temp);
-    }
-
 
     // =============================
     // 🧾 PAN
@@ -198,6 +187,10 @@ public class KycTempServiceImpl implements KycTempService {
         );
 
         temp.getPan().setOcrPanNumber(field.getPanNumber().getValue());
+
+        temp.setPanStatus(
+                KycStatus.IN_PROGRESS
+        );
 
         save(temp);
     }
@@ -219,6 +212,10 @@ public class KycTempServiceImpl implements KycTempService {
             temp.getPan().setVerified(true);
 
             temp.setPanStatus(KycStatus.SUCCESS);
+
+            temp.setCurrentStage(
+                    ApplicationStage.DRIVING_LICENSE
+            );
 
             updateKycCompletion(temp);
             save(temp);
@@ -286,6 +283,10 @@ public class KycTempServiceImpl implements KycTempService {
         temp.getDl().setOcrLicenseNumber(data.getLicenseNumber().getValue());
         temp.getDl().setOcrDob(data.getDob().getValue());
 
+        temp.setDlStatus(
+                KycStatus.IN_PROGRESS
+        );
+
         save(temp);
     }
 
@@ -302,6 +303,14 @@ public class KycTempServiceImpl implements KycTempService {
             temp.getDl().setVerifiedLicenseNumber(data.getLicenseNumber());
             temp.getDl().setVerifiedDob(data.getDob());
             temp.getDl().setVerified(true);
+
+            temp.setDlStatus(
+                    KycStatus.SUCCESS
+            );
+
+            temp.setCurrentStage(
+                    ApplicationStage.VOTER_ID
+            );
 
             save(temp);
 
@@ -331,6 +340,10 @@ public class KycTempServiceImpl implements KycTempService {
         temp.getVoter().setOcrEpicNumber(field.getEpicNumber().getValue());
         temp.getVoter().setOcrName(field.getFullName().getValue());
 
+        temp.setVoterStatus(
+                KycStatus.IN_PROGRESS
+        );
+
         save(temp);
     }
 
@@ -347,6 +360,14 @@ public class KycTempServiceImpl implements KycTempService {
             temp.getVoter().setVerifiedEpicNumber(data.getEpicNo());
             temp.getVoter().setVerifiedName(data.getName());
             temp.getVoter().setVerified(true);
+
+            temp.setVoterStatus(
+                    KycStatus.SUCCESS
+            );
+
+            temp.setCurrentStage(
+                    ApplicationStage.APPLICANT_DETAILS
+            );
 
             save(temp);
 

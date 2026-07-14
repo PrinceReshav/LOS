@@ -6,7 +6,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
-@Entity
+@Entity(name = "LoanEligibilityConfigV2")
 @Table(name = "loan_eligibility_config")
 @Data
 public class LoanEligibilityConfig {
