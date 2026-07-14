@@ -1,6 +1,7 @@
 package com.los.loanoriginatingsystem.temp.repository;
 
 import com.los.loanoriginatingsystem.temp.entity.TempLoanApplication;
+import com.los.loanoriginatingsystem.temp.enums.ApplicationStage;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -12,16 +13,41 @@ import java.util.Optional;
 public interface TempLoanApplicationRepository
         extends JpaRepository<TempLoanApplication, String> {
 
-    Optional<TempLoanApplication> findByLeadId(String leadId);
+    Optional<TempLoanApplication>
+    findByLeadId(String leadId);
+
+    boolean existsByLeadId(String leadId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT t FROM TempLoanApplication t WHERE t.id = :id")
-    Optional<TempLoanApplication> findByIdForUpdate(String id);
+    @Query("""
+           SELECT t
+           FROM TempLoanApplication t
+           WHERE t.id = :id
+           """)
+    Optional<TempLoanApplication>
+    findByIdForUpdate(String id);
 
-    Optional<TempLoanApplication> findBySubmissionRef(String submissionRef);
+    Optional<TempLoanApplication>
+    findBySubmissionRef(String submissionRef);
 
+    boolean existsBySubmissionRef(String submissionRef);
 
-    List<TempLoanApplication> findBySubmissionStatus(String status);
+    List<TempLoanApplication>
+    findBySubmissionStatus(String status);
 
+    @Query("""
+           SELECT t
+           FROM TempLoanApplication t
+           WHERE t.isSubmitted = false
+           """)
+    List<TempLoanApplication>
+    findAllActiveApplications();
 
+    @Query("""
+           SELECT t
+           FROM TempLoanApplication t
+           WHERE t.currentStage = :stage
+           """)
+    List<TempLoanApplication>
+    findByCurrentStage(ApplicationStage stage);
 }

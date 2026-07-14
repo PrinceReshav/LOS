@@ -11,6 +11,6 @@ public class LoanSequence {
     @Id
     private String name; // "LAN" or  "LA"
 
-    @Column(nullable = false)
+    @Column(name = "sequence_value",nullable = false)
     private Long value;
 }

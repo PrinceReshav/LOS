@@ -11,5 +11,6 @@ public class LeadSequence {
     @Id
     private String name; // "LEAD"
 
+    @Column(name = "sequence_value")
     private Long value;
 }

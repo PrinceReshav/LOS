@@ -51,5 +51,6 @@ public class AadhaarSubmitOtpResponseDTO {
         private String street;
         private String house;
         private String landmark;
+        private String pincode;
     }
 }

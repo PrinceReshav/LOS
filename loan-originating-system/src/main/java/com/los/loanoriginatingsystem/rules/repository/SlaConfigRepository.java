@@ -9,5 +9,5 @@ import java.util.List;
 public interface SlaConfigRepository extends JpaRepository<SlaConfig, String> {
 
     List<SlaConfig> findByActiveTrue();
-    List<Deviation> findByStatus(String status);
+
 }

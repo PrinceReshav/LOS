@@ -15,10 +15,18 @@ public class LeadNumberService {
     @Transactional
     public String generateLeadNumber() {
 
-        LeadSequence seq = repo.getForUpdate("LEAD");
+        LeadSequence seq =
+                repo.getForUpdate("LEAD")
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "LEAD sequence not found"
+                                )
+                        );
 
         Long next = seq.getValue() + 1;
+
         seq.setValue(next);
+
         repo.save(seq);
 
         return "Lead-" + String.format("%06d", next);

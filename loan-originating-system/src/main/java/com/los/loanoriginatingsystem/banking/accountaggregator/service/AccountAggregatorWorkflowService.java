@@ -1,4 +1,4 @@
-package com.los.loanoriginatingsystem.banking.accountaggregator.service;
+/*package com.los.loanoriginatingsystem.banking.accountaggregator.service;
 
 import com.los.loanoriginatingsystem.banking.accountaggregator.dto.BankStatementResponseDTO;
 import com.los.loanoriginatingsystem.banking.camanalysis.service.CamAnalysisService;
@@ -73,3 +73,5 @@ public class AccountAggregatorWorkflowService {
         }
     }
 }
+*
+*/

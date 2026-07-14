@@ -1,6 +1,8 @@
 package com.los.loanoriginatingsystem.document.controller;
 
-import com.los.loanoriginatingsystem.document.service.KYCDocumentService;
+import com.los.loanoriginatingsystem.document.dto.DocumentUploadRequest;
+import com.los.loanoriginatingsystem.document.dto.DocumentUploadResponse;
+import com.los.loanoriginatingsystem.document.service.DocumentUploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,23 +11,12 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class DocumentUploadController {
 
-    private final KYCDocumentService service;
+    private final DocumentUploadService service;
 
-    // =====================================================
-    // 📤 UPLOAD DOCUMENT (TEMP STAGE)
-    // =====================================================
     @PostMapping("/upload")
-    public String uploadDocument(
-            @RequestParam String tempId,
-            @RequestParam String fileData,
-            @RequestParam String fileName,
-            @RequestParam String kycType
+    public DocumentUploadResponse upload(
+            @RequestBody DocumentUploadRequest request
     ) {
-        return service.uploadKycDocument(
-                tempId,
-                fileData,
-                fileName,
-                kycType
-        );
+        return service.upload(request);
     }
 }

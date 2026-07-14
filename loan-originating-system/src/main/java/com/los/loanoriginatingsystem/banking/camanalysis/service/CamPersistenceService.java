@@ -1,4 +1,4 @@
-package com.los.loanoriginatingsystem.banking.camanalysis.service;
+/*package com.los.loanoriginatingsystem.banking.camanalysis.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.los.loanoriginatingsystem.banking.camanalysis.dto.BankAccountCAMData;
@@ -88,3 +88,4 @@ public class CamPersistenceService {
         loanApplicationRepository.save(loanApplication);
     }
 }
+*/

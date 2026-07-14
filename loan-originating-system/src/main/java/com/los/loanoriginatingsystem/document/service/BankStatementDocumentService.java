@@ -1,8 +1,8 @@
-    package com.los.loanoriginatingsystem.document.service;
+    /*package com.los.loanoriginatingsystem.document.service;
 
 
 
-    import com.los.loanoriginatingsystem.document.dto.BankStatementDocDTO;
+    *import com.los.loanoriginatingsystem.document.dto.BankStatementDocDTO;
     import com.los.loanoriginatingsystem.document.entity.Document;
     import com.los.loanoriginatingsystem.document.repository.DocumentRepository;
     import lombok.RequiredArgsConstructor;
@@ -48,3 +48,4 @@
             return result;
         }
     }
+    */

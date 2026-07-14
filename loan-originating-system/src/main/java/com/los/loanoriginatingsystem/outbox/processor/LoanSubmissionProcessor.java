@@ -6,6 +6,7 @@ import com.los.loanoriginatingsystem.applicant.repository.LoanApplicantRepositor
 import com.los.loanoriginatingsystem.audit.service.AuditService;
 import com.los.loanoriginatingsystem.document.entity.Document;
 import com.los.loanoriginatingsystem.document.repository.DocumentRepository;
+import com.los.loanoriginatingsystem.document.util.ApplicantDocumentTypes;
 import com.los.loanoriginatingsystem.lead.service.LeadService;
 import com.los.loanoriginatingsystem.loan.entity.LoanApplication;
 import com.los.loanoriginatingsystem.loan.repository.LoanApplicationRepository;
@@ -140,7 +141,11 @@ public class LoanSubmissionProcessor {
                 doc.setTempLoanId(null);
                 doc.setLoanApplicationId(loan.getId());
 
-                if (doc.getKycType() != null) {
+                if (
+                        ApplicantDocumentTypes.TYPES.contains(
+                                doc.getDocumentType()
+                        )
+                ) {
                     doc.setLoanApplicantId(applicant.getId());
                 }
             }

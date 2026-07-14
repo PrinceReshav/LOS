@@ -1,3 +1,5 @@
+/*
+*
 package com.los.loanoriginatingsystem.banking.bankstatement.validation;
 
 import com.los.loanoriginatingsystem.document.repository.DocumentRepository;
@@ -23,10 +25,15 @@ public class BankStatementDuplicateValidator {
                                 documentId
                         );
 
-        if (exists) {
+
+
+ if (exists) {
             throw new IllegalStateException(
                     "Duplicate bank statement for account: " + accountNumber
             );
         }
+
+
     }
 }
+*/

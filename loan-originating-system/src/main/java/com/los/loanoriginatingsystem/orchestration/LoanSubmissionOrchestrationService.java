@@ -18,7 +18,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class LoanSubmissionService {
+public class LoanSubmissionOrchestrationService {
 
     private final TempLoanApplicationRepository tempRepo;
     private final LoanApplicationRepository loanRepo;
@@ -28,7 +28,7 @@ public class LoanSubmissionService {
     private final DocumentValidationService documentValidationService;
     private final OutboxService outboxService;
 
-    private static final Logger log = LoggerFactory.getLogger(LoanSubmissionService.class);
+    private static final Logger log = LoggerFactory.getLogger(LoanSubmissionOrchestrationService.class);
 
     @Transactional
     public String submit(String tempId) {

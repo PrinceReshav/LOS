@@ -1,4 +1,5 @@
-package com.los.loanoriginatingsystem.banking.bankstatement.service;
+/*
+*package com.los.loanoriginatingsystem.banking.bankstatement.service;
 
 import com.los.loanoriginatingsystem.banking.camanalysis.entity.AverageBankBalance;
 import com.los.loanoriginatingsystem.banking.camanalysis.repository.AverageBankBalanceRepository;
@@ -34,3 +35,4 @@ public class BankStatementService {
         }
     }
 }
+*/
