@@ -19,8 +19,10 @@ import java.time.LocalDateTime;
 @Builder
 public class Permission {
 
+
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(name = "permission_code", nullable = false, unique = true)
