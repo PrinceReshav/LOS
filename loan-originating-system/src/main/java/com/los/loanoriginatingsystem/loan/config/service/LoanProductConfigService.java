@@ -10,7 +10,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class LoanConfigService {
+public class LoanProductConfigService {
 
     private final LoanEligibilityConfigRepository repo;
 

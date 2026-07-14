@@ -13,8 +13,6 @@ public interface KycTempService {
 
     void processAadhaarOCR(String tempId, AadhaarOCRResponseDTO dto);
 
-    void verifyAadhaar(String tempId, AadhaarVerificationResponseDTO dto);
-
     void processPanOCR(String tempId, PanOCRResponseDTO dto);
 
     void verifyPan(String tempId, PanVerificationResponseDTO dto);

@@ -41,10 +41,10 @@ public class BusinessRuleExecutor {
         }
 
         // 🔥 STEP 3: OBJECT-SPECIFIC RULES
-        List<RuleEngine> rules =
-                ruleEngineRepository.findByObjectNameAndActiveTrue(objectName);
+       // List<RuleEngine> rules =
+        //        ruleEngineRepository.findByObjectNameAndActiveTrue(objectName);
 
-        results.addAll(evaluateRules(rules, entity));
+       // results.addAll(evaluateRules(rules, entity));
 
         return results;
     }

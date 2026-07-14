@@ -1,7 +1,8 @@
 package com.los.loanoriginatingsystem.temp.validation;
 
 import com.los.loanoriginatingsystem.loan.config.entity.LoanEligibilityConfig;
-import com.los.loanoriginatingsystem.loan.config.service.LoanConfigService;
+import com.los.loanoriginatingsystem.loan.config.service.LoanProductConfigService ;
+import com.los.loanoriginatingsystem.loan.config.service.LoanProductConfigService;
 import com.los.loanoriginatingsystem.temp.entity.TempLoanApplication;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,7 @@ public class TempLoanValidator {
     private final LoanProductValidator loanValidator;
     private final KycValidator kycValidator;
     private final ApplicantValidator applicantValidator;
-    private final LoanConfigService configService;
+    private final LoanProductConfigService configService;
     // =============================
     // 🔍 FINAL SUBMIT VALIDATION
     // =============================

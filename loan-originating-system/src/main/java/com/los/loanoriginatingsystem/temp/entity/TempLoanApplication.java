@@ -1,6 +1,7 @@
 package com.los.loanoriginatingsystem.temp.entity;
 
 import com.los.loanoriginatingsystem.temp.entity.embedded.*;
+import com.los.loanoriginatingsystem.temp.enums.ApplicationStage;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -8,7 +9,9 @@ import java.time.LocalDateTime;
 
 
 @Entity
-@Table(name = "temp_loan_application")
+@Table(
+        name = "temp_loan_application"
+)
 @Data
 public class TempLoanApplication {
 
@@ -18,6 +21,12 @@ public class TempLoanApplication {
     // =============================
     // RELATIONS
     // =============================
+
+    @Column(
+            name = "lead_id",
+            nullable = false,
+            unique = true
+    )
     private String leadId;
 
     private Boolean isResume;
@@ -63,6 +72,10 @@ public class TempLoanApplication {
     private LivenessDetails liveness = new LivenessDetails();
     @Enumerated(EnumType.STRING)
     private KycStatus livenessStatus = KycStatus.NOT_STARTED;
+
+    @Enumerated(EnumType.STRING)
+    private ApplicationStage currentStage =
+            ApplicationStage.LOAN_DETAILS;
 
     // =============================
     // STEP 4 → APPLICANT DETAILS

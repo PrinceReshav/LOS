@@ -1,6 +1,6 @@
-package com.los.loanoriginatingsystem.document.service;
+/*package com.los.loanoriginatingsystem.document.service;
 
-import com.los.loanoriginatingsystem.banking.camanalysis.repository.AverageBankBalanceRepository;
+*import com.los.loanoriginatingsystem.banking.camanalysis.repository.AverageBankBalanceRepository;
 import com.los.loanoriginatingsystem.document.entity.Document;
 import com.los.loanoriginatingsystem.document.repository.DocumentRepository;
 import com.los.loanoriginatingsystem.event.DocumentProcessedEvent;
@@ -54,7 +54,7 @@ public class DocumentService {
     /*
      * only one bank statement is primary.
      */
-    public void markPrimaryStatement(String documentId, String applicationId) {
+ /*   public void markPrimaryStatement(String documentId, String applicationId) {
 
         List<Document> documents =
                 documentRepository.findByApplicationId(applicationId);
@@ -74,3 +74,4 @@ public class DocumentService {
         documentRepository.saveAll(documents);
     }
 }
+*/

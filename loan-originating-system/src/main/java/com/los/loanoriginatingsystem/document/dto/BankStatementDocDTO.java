@@ -1,6 +1,6 @@
-package com.los.loanoriginatingsystem.document.dto;
+/*package com.los.loanoriginatingsystem.document.dto;
 
-import lombok.Data;
+*import lombok.Data;
 
 @Data
 public class BankStatementDocDTO {
@@ -10,3 +10,4 @@ public class BankStatementDocDTO {
     private String viewFile;
 
 }
+*/

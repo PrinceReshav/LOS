@@ -1,5 +1,5 @@
-package com.los.loanoriginatingsystem.banking.accountaggregator.service;
-
+/*package com.los.loanoriginatingsystem.banking.accountaggregator.service;
+*
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.los.loanoriginatingsystem.banking.accountaggregator.dto.AACallbackDTO;
 import com.los.loanoriginatingsystem.banking.accountaggregator.event.AACallbackEvent;
@@ -161,3 +161,4 @@ public class AccountAggregatorCallbackService {
         }
     }
 }
+*/

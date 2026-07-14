@@ -2,8 +2,8 @@ package com.los.loanoriginatingsystem.loanProduct.config.service;
 
 import com.los.loanoriginatingsystem.loanProduct.config.entity.LoanEligibilityConfig;
 import com.los.loanoriginatingsystem.loanProduct.config.entity.LoanTenureConfig;
-import com.los.loanoriginatingsystem.loanProduct.config.repository.LoanEligibilityConfigRepository;
-import com.los.loanoriginatingsystem.loanProduct.config.repository.LoanTenureConfigRepository;
+import com.los.loanoriginatingsystem.loanProduct.config.repository.LoanProductEligibilityConfigRepository;
+import com.los.loanoriginatingsystem.loanProduct.config.repository.LoanProductTenureConfigRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,8 +15,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LoanConfigService {
 
-    private final LoanEligibilityConfigRepository eligibilityRepo;
-    private final LoanTenureConfigRepository tenureRepo;
+    private final LoanProductEligibilityConfigRepository eligibilityRepo;
+    private final LoanProductTenureConfigRepository tenureRepo;
 
     // =====================================================
     // 🔥 MATCH ELIGIBILITY CONFIG

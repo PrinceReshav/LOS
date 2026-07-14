@@ -9,5 +9,5 @@ public interface LeadRepository extends JpaRepository<Lead, String> {
 
     Optional<Lead> findByLeadNumber(String leadNumber);
 
-    Optional<Lead> findByMobile(String mobile);
+    Optional<Lead> findByMobileNumber(String mobileNumber);
 }
