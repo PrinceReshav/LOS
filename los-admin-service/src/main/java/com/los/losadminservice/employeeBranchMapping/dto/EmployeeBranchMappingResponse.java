@@ -1,12 +1,10 @@
 package com.los.losadminservice.employeeBranchMapping.dto;
 
-import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
-@Builder
 public class EmployeeBranchMappingResponse {
 
     private Long id;
@@ -16,6 +14,8 @@ public class EmployeeBranchMappingResponse {
 
     private String branchId;
     private String branchName;
+
+    private Boolean primaryBranch;
 
     private Boolean active;
 
@@ -29,6 +29,7 @@ public class EmployeeBranchMappingResponse {
             String employeeName,
             String branchId,
             String branchName,
+            Boolean primaryBranch,
             Boolean active,
             LocalDateTime assignedAt,
             LocalDateTime relievedAt
@@ -39,6 +40,7 @@ public class EmployeeBranchMappingResponse {
         this.employeeName = employeeName;
         this.branchId = branchId;
         this.branchName = branchName;
+        this.primaryBranch = primaryBranch;
         this.active = active;
         this.assignedAt = assignedAt;
         this.relievedAt = relievedAt;

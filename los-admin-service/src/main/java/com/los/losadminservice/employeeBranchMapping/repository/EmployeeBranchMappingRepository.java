@@ -15,11 +15,20 @@ public interface EmployeeBranchMappingRepository
             String employeeId
     );
 
+    Optional<EmployeeBranchMapping> findByEmployeeIdAndActiveTrueAndPrimaryBranchTrue(
+            String employeeId
+    );
+
     List<EmployeeBranchMapping> findByBranchIdAndActiveTrue(
             String branchId
     );
 
     boolean existsByEmployeeIdAndBranchId(
+            String employeeId,
+            String branchId
+    );
+
+    boolean existsByEmployeeIdAndBranchIdAndActiveTrue(
             String employeeId,
             String branchId
     );
@@ -31,6 +40,7 @@ public interface EmployeeBranchMappingRepository
             e.fullName,
             b.id,
             b.branchName,
+            m.primaryBranch,
             m.active,
             m.assignedAt,
             m.relievedAt
@@ -51,6 +61,29 @@ public interface EmployeeBranchMappingRepository
             e.fullName,
             b.id,
             b.branchName,
+            m.primaryBranch,
+            m.active,
+            m.assignedAt,
+            m.relievedAt
+        )
+        from EmployeeBranchMapping m
+        join Employee e
+            on e.employeeId = m.employeeId
+        join Branch b
+            on b.id = m.branchId
+        where m.employeeId = :employeeId
+        and m.active = true
+    """)
+    List<EmployeeBranchMappingResponse> findActiveResponsesByEmployeeId(String employeeId);
+
+    @Query("""
+        select new com.los.losadminservice.employeeBranchMapping.dto.EmployeeBranchMappingResponse(
+            m.id,
+            e.employeeId,
+            e.fullName,
+            b.id,
+            b.branchName,
+            m.primaryBranch,
             m.active,
             m.assignedAt,
             m.relievedAt

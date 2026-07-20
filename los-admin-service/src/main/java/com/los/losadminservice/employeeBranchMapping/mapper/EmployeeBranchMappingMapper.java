@@ -16,23 +16,16 @@ public final class EmployeeBranchMappingMapper {
             Branch branch
     ) {
 
-        return EmployeeBranchMappingResponse.builder()
-                .id(mapping.getId())
-                .employeeId(mapping.getEmployeeId())
-                .employeeName(
-                        employee != null
-                                ? employee.getFullName()
-                                : null
-                )
-                .branchId(mapping.getBranchId())
-                .branchName(
-                        branch != null
-                                ? branch.getBranchName()
-                                : null
-                )
-                .active(mapping.getActive())
-                .assignedAt(mapping.getAssignedAt())
-                .relievedAt(mapping.getRelievedAt())
-                .build();
+        return new EmployeeBranchMappingResponse(
+                mapping.getId(),
+                mapping.getEmployeeId(),
+                employee != null ? employee.getFullName() : null,
+                mapping.getBranchId(),
+                branch != null ? branch.getBranchName() : null,
+                mapping.getPrimaryBranch(),
+                mapping.getActive(),
+                mapping.getAssignedAt(),
+                mapping.getRelievedAt()
+        );
     }
 }

@@ -1,8 +1,11 @@
 package com.los.losadminservice.branch.service;
 
 import com.los.losadminservice.branch.dto.BranchResponse;
+import com.los.losadminservice.branch.mapper.BranchMapper;
 import com.los.losadminservice.branch.model.Branch;
 import com.los.losadminservice.branch.repository.BranchRepository;
+import com.los.losadminservice.common.exception.BusinessRuleViolationException;
+import com.los.losadminservice.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +22,7 @@ public class BranchService {
     public Branch create(Branch branch){
 
         if(branchRepository.existsByCompanyBranchId(branch.getCompanyBranchId())){
-            throw new IllegalArgumentException("Branch already exists");
+            throw new BusinessRuleViolationException("Branch already exists");
         }
 
         return branchRepository.save(branch);
@@ -29,7 +32,7 @@ public class BranchService {
     public Branch getById(String id){
 
         return branchRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Branch not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Branch not found"));
     }
 
     @Transactional(readOnly = true)
@@ -53,6 +56,9 @@ public class BranchService {
     @Transactional(readOnly = true)
     public List<BranchResponse> getAllResponses() {
 
-        return branchRepository.findAllResponses();
+        return branchRepository.findAll()
+                .stream()
+                .map(BranchMapper::toResponse)
+                .toList();
     }
 }

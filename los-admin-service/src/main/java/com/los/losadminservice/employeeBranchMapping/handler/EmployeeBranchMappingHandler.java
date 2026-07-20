@@ -15,9 +15,7 @@ public class EmployeeBranchMappingHandler {
 
     private final EmployeeBranchMappingService service;
 
-    public EmployeeBranchMapping create(
-            EmployeeBranchMappingCreateRequest req
-    ) {
+    public EmployeeBranchMapping create(EmployeeBranchMappingCreateRequest req) {
         return service.create(req);
     }
 
@@ -25,13 +23,19 @@ public class EmployeeBranchMappingHandler {
         return service.getAll();
     }
 
-    public EmployeeBranchMappingResponse getById(
-            Long id
-    ) {
+    public List<EmployeeBranchMappingResponse> getForEmployee(String employeeId) {
+        return service.getResponsesForEmployee(employeeId);
+    }
+
+    public EmployeeBranchMappingResponse getById(Long id) {
         return service.getResponseById(id);
     }
 
     public void deactivate(Long id) {
         service.deactivate(id);
+    }
+
+    public EmployeeBranchMapping setPrimary(Long id) {
+        return service.setPrimary(id);
     }
 }

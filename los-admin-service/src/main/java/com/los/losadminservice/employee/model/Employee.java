@@ -31,14 +31,32 @@ public class Employee {
 
     private String mobile;
 
-    private String designation;
-
     private String roleId;
     private String roleName;
 
 
     private String profileId;
     private String profileName;
+
+    /**
+     * Department the employee belongs to (references Department.code).
+     * Not part of the User/Employee gRPC contract - HR/Admin assigns this
+     * within losAdminService itself, together with the reporting manager
+     * and branch, once the employee record has arrived from the User
+     * service via Kafka.
+     */
+    @Column(name = "department_id")
+    private String departmentId;
+
+    @Column(name = "department_name")
+    private String departmentName;
+
+    /** References Designation.designationId. */
+    @Column(name = "designation_id")
+    private String designationId;
+
+    @Column(name = "designation_name")
+    private String designationName;
 
     // private String branchId;
 
