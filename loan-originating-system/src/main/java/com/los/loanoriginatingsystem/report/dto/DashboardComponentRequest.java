@@ -7,6 +7,10 @@ import lombok.Data;
 @Data
 public class DashboardComponentRequest {
 
+    // Only populated/used for layout updates on existing components;
+    // ignored (and generated fresh) when creating new ones.
+    private String id;
+
     private String reportId;
     private String title;
     private DashboardComponentType componentType;

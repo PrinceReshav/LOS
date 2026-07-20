@@ -1,5 +1,6 @@
 package com.los.loanoriginatingsystem.report.controller;
 
+import com.los.loanoriginatingsystem.report.dto.FieldDescriptorDTO;
 import com.los.loanoriginatingsystem.report.dto.ReportDefinitionRequest;
 import com.los.loanoriginatingsystem.report.dto.ReportDefinitionResponse;
 import com.los.loanoriginatingsystem.report.dto.ReportExecutionResult;
@@ -20,6 +21,7 @@ public class ReportDefinitionController {
 
     private final ReportDefinitionService service;
     private final ReportSourceRegistry sourceRegistry;
+    private final com.los.loanoriginatingsystem.report.service.ReportQueryEngine queryEngine;
 
     @GetMapping
     public List<ReportDefinitionResponse> getAll() {
@@ -81,6 +83,27 @@ public class ReportDefinitionController {
             @PathVariable ReportSourceObject source
     ) {
         return sourceRegistry.describeFields(source);
+    }
+
+    // Richer version of the above — includes each field's type
+    // category and, for picklist-style fields, its allowed values —
+    // so filter controls can render a dropdown instead of free text.
+    @GetMapping("/sources/{source}/fields/detailed")
+    public List<FieldDescriptorDTO> describeFieldsDetailed(
+            @PathVariable ReportSourceObject source
+    ) {
+        return sourceRegistry.describeFieldsDetailed(source);
+    }
+
+    // Real, currently-existing values for a field — used to populate
+    // filter value dropdowns with actual data instead of free text,
+    // for fields that aren't enums (e.g. leadSource).
+    @GetMapping("/sources/{source}/fields/{field}/distinct-values")
+    public List<String> getDistinctValues(
+            @PathVariable ReportSourceObject source,
+            @PathVariable String field
+    ) {
+        return queryEngine.getDistinctValues(source, field);
     }
 
     @GetMapping("/sources")

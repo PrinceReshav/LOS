@@ -1,5 +1,6 @@
 package com.los.loanoriginatingsystem.report.controller;
 
+import com.los.loanoriginatingsystem.report.dto.DashboardComponentRequest;
 import com.los.loanoriginatingsystem.report.dto.DashboardRequest;
 import com.los.loanoriginatingsystem.report.dto.DashboardResponse;
 import com.los.loanoriginatingsystem.report.service.DashboardService;
@@ -9,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/dashboards")
@@ -30,12 +32,15 @@ public class DashboardController {
     }
 
     // Full dashboard with every component's report freshly executed
-    // — this is the endpoint the dashboard viewer page calls.
+    // — this is the endpoint the dashboard viewer page calls. Any
+    // query param is treated as a dashboard-level filter override,
+    // e.g. GET /api/dashboards/{id}/data?stage=UNDERWRITING
     @GetMapping("/{id}/data")
     public DashboardResponse getDashboardData(
-            @PathVariable String id
+            @PathVariable String id,
+            @RequestParam Map<String, String> filters
     ) {
-        return service.getDashboardData(id);
+        return service.getDashboardData(id, filters);
     }
 
     @PostMapping
@@ -51,6 +56,16 @@ public class DashboardController {
             @RequestBody DashboardRequest request
     ) {
         return service.update(id, request);
+    }
+
+    // Drag-and-drop layout save — only touches position/size fields
+    // of existing components.
+    @PatchMapping("/{id}/layout")
+    public DashboardResponse updateLayout(
+            @PathVariable String id,
+            @RequestBody List<DashboardComponentRequest> layout
+    ) {
+        return service.updateLayout(id, layout);
     }
 
     @DeleteMapping("/{id}")

@@ -12,7 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "report_definition")
+@Table(
+        name = "report_definition",
+        indexes = @Index(name = "idx_report_definition_folder_id", columnList = "folderId")
+)
 @Data
 public class ReportDefinition {
 

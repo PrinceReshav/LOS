@@ -3,6 +3,7 @@ package com.los.losadminservice.branch.controller;
 import com.los.losadminservice.branch.dto.*;
 import com.los.losadminservice.branch.handler.BranchHandler;
 import com.los.losadminservice.branch.mapper.BranchMapper;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class BranchController {
 
     @PostMapping
     public BranchResponse create(
-            @RequestBody BranchCreateRequest request
+            @Valid @RequestBody BranchCreateRequest request
     ){
         return branchHandler.create(request);
     }

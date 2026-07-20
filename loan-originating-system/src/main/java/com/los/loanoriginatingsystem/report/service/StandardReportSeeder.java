@@ -163,10 +163,21 @@ public class StandardReportSeeder implements CommandLineRunner {
                 )
         );
 
+        seedMatrixReport(
+                reportFolderId,
+                "Applications by Stage and Product",
+                "Count of loan applications, broken down by stage and product",
+                ReportSourceObject.LOAN_APPLICATION,
+                "stage",
+                "loanProductCode",
+                AggregateFunction.COUNT
+        );
+
         seedDashboard(
                 dashboardFolderId,
                 "Loan Origination Overview",
                 "A snapshot of leads and loan applications across the pipeline",
+                List.of("stage"),
                 leadsByStatus,
                 applicationsByStage,
                 applicationsByProduct,
@@ -257,10 +268,42 @@ public class StandardReportSeeder implements CommandLineRunner {
         return report.getId();
     }
 
+    private String seedMatrixReport(
+            String folderId,
+            String name,
+            String description,
+            ReportSourceObject source,
+            String groupByField1,
+            String groupByField2,
+            AggregateFunction aggregateFunction
+    ) {
+
+        ReportDefinition report = new ReportDefinition();
+
+        report.setId(UUID.randomUUID().toString());
+        report.setName(name);
+        report.setDescription(description);
+        report.setFolderId(folderId);
+        report.setSourceObject(source);
+        report.setReportType(ReportType.MATRIX);
+        report.setGroupByField1(groupByField1);
+        report.setGroupByField2(groupByField2);
+        report.setAggregateFunction(aggregateFunction);
+        report.setChartType(ChartType.NONE);
+        report.setIsStandard(true);
+        report.setCreatedBy("system");
+        report.setCreatedAt(LocalDateTime.now());
+
+        reportRepository.save(report);
+
+        return report.getId();
+    }
+
     private void seedDashboard(
             String folderId,
             String name,
             String description,
+            List<String> filterFields,
             String... reportIds
     ) {
 
@@ -270,6 +313,7 @@ public class StandardReportSeeder implements CommandLineRunner {
         dashboard.setName(name);
         dashboard.setDescription(description);
         dashboard.setFolderId(folderId);
+        dashboard.setDashboardFilterFields(filterFields);
         dashboard.setIsStandard(true);
         dashboard.setCreatedBy("system");
         dashboard.setCreatedAt(LocalDateTime.now());

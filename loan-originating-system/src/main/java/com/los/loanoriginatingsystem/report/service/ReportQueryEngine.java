@@ -19,8 +19,48 @@ import java.util.*;
 @RequiredArgsConstructor
 public class ReportQueryEngine {
 
+    // Salesforce itself caps standard report execution at 2,000 rows
+    // in-app (Data Export is the path for more) — this bounds both
+    // memory use and response time the same way, rather than letting
+    // a broad, unfiltered report try to load an entire table.
+    private static final int MAX_ROWS = 2000;
+
     private final EntityManager entityManager;
     private final ReportSourceRegistry sourceRegistry;
+
+    private static final int MAX_DISTINCT_VALUES = 200;
+
+    // Real, currently-existing values for a field — used to populate
+    // filter dropdowns with actual data instead of free-text boxes,
+    // the same way Salesforce's report filter shows a picklist of
+    // values that are actually in use.
+    @SuppressWarnings("unchecked")
+    public List<String> getDistinctValues(
+            com.los.loanoriginatingsystem.report.enums.ReportSourceObject source,
+            String field
+    ) {
+
+        Class<?> entityClass = sourceRegistry.resolveEntityClass(source);
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+
+        CriteriaQuery<Object> cq = (CriteriaQuery<Object>) (CriteriaQuery<?>) cb.createQuery();
+
+        Root<?> root = cq.from(entityClass);
+
+        cq.select((Selection<Object>) root.get(field)).distinct(true);
+
+        List<Object> results =
+                entityManager.createQuery(cq)
+                        .setMaxResults(MAX_DISTINCT_VALUES)
+                        .getResultList();
+
+        return results.stream()
+                .filter(Objects::nonNull)
+                .map(Object::toString)
+                .sorted()
+                .toList();
+    }
 
     public ReportExecutionResult execute(
             ReportDefinition report,
@@ -187,7 +227,14 @@ public class ReportQueryEngine {
 
         List<Tuple> tuples =
                 entityManager.createQuery(cq)
+                        .setMaxResults(MAX_ROWS + 1)
                         .getResultList();
+
+        boolean truncated = tuples.size() > MAX_ROWS;
+
+        if (truncated) {
+            tuples = tuples.subList(0, MAX_ROWS);
+        }
 
         List<Map<String, Object>> rows = new ArrayList<>();
 
@@ -212,6 +259,8 @@ public class ReportQueryEngine {
         }
 
         ReportExecutionResult result = new ReportExecutionResult();
+
+        result.setTruncated(truncated);
 
         result.setColumns(columnLabels);
         result.setRows(rows);

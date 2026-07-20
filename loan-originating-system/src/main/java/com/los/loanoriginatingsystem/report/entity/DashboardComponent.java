@@ -6,7 +6,10 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
-@Table(name = "dashboard_component")
+@Table(
+        name = "dashboard_component",
+        indexes = @Index(name = "idx_dashboard_component_dashboard_id", columnList = "dashboardId")
+)
 @Data
 public class DashboardComponent {
 

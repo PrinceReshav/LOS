@@ -3,15 +3,20 @@ package com.los.loanoriginatingsystem.report.service;
 import com.los.loanoriginatingsystem.report.dto.*;
 import com.los.loanoriginatingsystem.report.entity.ReportDefinition;
 import com.los.loanoriginatingsystem.report.entity.ReportFilterCriteria;
+import com.los.loanoriginatingsystem.report.enums.FilterOperator;
 import com.los.loanoriginatingsystem.report.registry.ReportSourceRegistry;
 import com.los.loanoriginatingsystem.report.repository.ReportDefinitionRepository;
 import com.los.loanoriginatingsystem.report.repository.ReportFilterCriteriaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,18 +27,37 @@ public class ReportDefinitionService {
     private final ReportSourceRegistry sourceRegistry;
     private final ReportQueryEngine queryEngine;
 
+    @Transactional(readOnly = true)
     public List<ReportDefinitionResponse> getAll() {
 
-        return repository.findAll()
-                .stream()
-                .map(this::toResponse)
+        List<ReportDefinition> reports = repository.findAll();
+
+        List<String> reportIds = reports.stream()
+                .map(ReportDefinition::getId)
+                .toList();
+
+        // Fetch every report's filters in a single query instead of
+        // one query per report (N+1) — this is what keeps the
+        // Reports Home list fast as the number of saved reports grows.
+        Map<String, List<ReportFilterCriteria>> filtersByReportId =
+                filterRepository.findByReportIdIn(reportIds)
+                        .stream()
+                        .collect(Collectors.groupingBy(ReportFilterCriteria::getReportId));
+
+        return reports.stream()
+                .map(report -> toResponse(
+                        report,
+                        filtersByReportId.getOrDefault(report.getId(), List.of())
+                ))
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public ReportDefinitionResponse getById(String id) {
         return toResponse(getEntity(id));
     }
 
+    @Transactional
     public ReportDefinitionResponse create(
             ReportDefinitionRequest request,
             String createdBy
@@ -57,6 +81,7 @@ public class ReportDefinitionService {
         return toResponse(report);
     }
 
+    @Transactional
     public ReportDefinitionResponse update(
             String id,
             ReportDefinitionRequest request
@@ -84,6 +109,7 @@ public class ReportDefinitionService {
         return toResponse(report);
     }
 
+    @Transactional
     public ReportDefinitionResponse clone(String id, String createdBy) {
 
         ReportDefinition original = getEntity(id);
@@ -130,6 +156,7 @@ public class ReportDefinitionService {
         return toResponse(copy);
     }
 
+    @Transactional
     public void delete(String id) {
 
         ReportDefinition report = getEntity(id);
@@ -145,11 +172,50 @@ public class ReportDefinitionService {
     }
 
     public ReportExecutionResult execute(String id) {
+        return execute(id, null);
+    }
+
+    // Runs the saved report, optionally merging in dashboard-level
+    // filter overrides. Overrides are silently skipped for fields
+    // that don't exist on this report's source object, so a single
+    // dashboard filter can safely apply across components backed by
+    // different objects.
+    public ReportExecutionResult execute(
+            String id,
+            Map<String, String> filterOverrides
+    ) {
 
         ReportDefinition report = getEntity(id);
 
         List<ReportFilterCriteria> filters =
-                filterRepository.findByReportId(id);
+                new ArrayList<>(
+                        filterRepository.findByReportId(id)
+                );
+
+        if (filterOverrides != null) {
+
+            for (Map.Entry<String, String> entry : filterOverrides.entrySet()) {
+
+                String field = entry.getKey();
+                String value = entry.getValue();
+
+                if (value == null || value.isBlank()) {
+                    continue;
+                }
+
+                if (!sourceRegistry.isValidField(report.getSourceObject(), field)) {
+                    continue;
+                }
+
+                ReportFilterCriteria override = new ReportFilterCriteria();
+
+                override.setFieldName(field);
+                override.setOperator(FilterOperator.EQUALS);
+                override.setValue(value);
+
+                filters.add(override);
+            }
+        }
 
         return queryEngine.execute(report, filters);
     }
@@ -252,6 +318,51 @@ public class ReportDefinitionService {
                     "Invalid group-by field : " + request.getGroupByField1()
             );
         }
+
+        if (
+                request.getGroupByField2() != null
+                        && !request.getGroupByField2().isBlank()
+                        && !sourceRegistry.isValidField(
+                        request.getSourceObject(),
+                        request.getGroupByField2()
+                )
+        ) {
+            throw new RuntimeException(
+                    "Invalid group-by field : " + request.getGroupByField2()
+            );
+        }
+
+        if (
+                request.getAggregateFunction() != null
+                        && request.getAggregateField() != null
+                        && !request.getAggregateField().isBlank()
+        ) {
+
+            if (!sourceRegistry.isValidField(request.getSourceObject(), request.getAggregateField())) {
+                throw new RuntimeException(
+                        "Invalid aggregate field : " + request.getAggregateField()
+                );
+            }
+
+            boolean requiresNumeric =
+                    switch (request.getAggregateFunction()) {
+                        case SUM, AVG, MIN, MAX -> true;
+                        default -> false;
+                    };
+
+            if (
+                    requiresNumeric
+                            && !sourceRegistry.isNumericField(
+                            request.getSourceObject(),
+                            request.getAggregateField()
+                    )
+            ) {
+                throw new RuntimeException(
+                        request.getAggregateFunction() + " requires a numeric field, but '"
+                                + request.getAggregateField() + "' is not numeric"
+                );
+            }
+        }
     }
 
     private ReportDefinition getEntity(String id) {
@@ -263,10 +374,16 @@ public class ReportDefinitionService {
     }
 
     private ReportDefinitionResponse toResponse(ReportDefinition report) {
+        return toResponse(report, filterRepository.findByReportId(report.getId()));
+    }
+
+    private ReportDefinitionResponse toResponse(
+            ReportDefinition report,
+            List<ReportFilterCriteria> filterEntities
+    ) {
 
         List<ReportFilterCriteriaDTO> filters =
-                filterRepository.findByReportId(report.getId())
-                        .stream()
+                filterEntities.stream()
                         .map(f -> {
                             ReportFilterCriteriaDTO dto = new ReportFilterCriteriaDTO();
                             dto.setId(f.getId());

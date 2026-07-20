@@ -17,5 +17,6 @@ public class DashboardResponse {
     private Boolean isStandard;
     private String createdBy;
     private LocalDateTime createdAt;
+    private List<String> filterFields;
     private List<DashboardComponentResponse> components;
 }

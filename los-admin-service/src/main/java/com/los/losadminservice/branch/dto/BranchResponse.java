@@ -1,9 +1,12 @@
 package com.los.losadminservice.branch.dto;
 
+import com.los.losadminservice.common.enums.BranchType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.Set;
 
 @Data
 @Builder
@@ -24,6 +27,14 @@ public class BranchResponse {
     private String district;
 
     private String state;
+
+    private BranchType branchType;
+
+    private Double latitude;
+
+    private Double longitude;
+
+    private Set<String> languageCodes;
 
     private Boolean active;
 }
