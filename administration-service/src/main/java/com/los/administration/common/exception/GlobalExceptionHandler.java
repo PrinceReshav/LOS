@@ -75,6 +75,31 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(ex.getMessage());
     }
 
+    // ---------- Business Rule Conflicts (409) ----------
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<?> handleIllegalState(IllegalStateException ex) {
+
+        log.warn("BUSINESS RULE CONFLICT: {}", ex.getMessage());
+
+        return ApiResponse.error(ex.getMessage());
+    }
+
+    // ---------- Access Denied (403) ----------
+    // Covers both @PreAuthorize/@RequiresPermission AOP failures and
+    // AccessDeniedException thrown directly from service code (e.g.
+    // SecurityPermissionService, visibility checks).
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiResponse<?> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+
+        log.warn("ACCESS DENIED: {}", ex.getMessage());
+
+        return ApiResponse.error(
+                ex.getMessage() != null ? ex.getMessage() : "You do not have permission to perform this action"
+        );
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<?>> handleDataIntegrityViolation(
             DataIntegrityViolationException ex

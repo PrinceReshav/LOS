@@ -38,8 +38,8 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
 
-                // Enable CORS
-                //.cors(cors -> {})
+                // Enable CORS (see CorsConfig for the actual allowed origins/methods)
+                .cors(cors -> {})
 
                 // Required for H2 console
                 .headers(headers ->

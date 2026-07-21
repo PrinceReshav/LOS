@@ -167,32 +167,19 @@ public class UserController {
         );
     }
 
+    /**
+     * Backs the User Details page - notably, this is the page the LOS
+     * Admin Employee Details screen links to via the employee's userId.
+     */
+    @PreAuthorize("isAuthenticated()")
+    @RequiresPermission(object = "USER", action = "READ")
+    @GetMapping("/{userId}")
+    public ApiResponse<UserResponse> getUserById(@PathVariable String userId) {
 
+        return ApiResponse.success(
+                userService.getUserById(userId),
+                "User fetched successfully"
+        );
+    }
 
 }
-
-
-/*
- * @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping
-    public ApiResponse<Page<UserResponse>> getUsers(
-            @RequestParam(required = false) String username,
-            @RequestParam(required = false) String employeeId,
-            @RequestParam(required = false) String roleName,
-            @RequestParam(required = false) String profileName,
-            @RequestParam(required = false) Boolean active,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
-
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by(Sort.Direction.DESC, "createdAt")
-        );
-
-        Page<UserResponse> result =
-                userService.getUsers(username, employeeId, roleName, profileName, active, pageable);
-
-        return ApiResponse.success(result, "Users fetched successfully");
-    }*/

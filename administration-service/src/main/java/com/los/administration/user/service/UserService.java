@@ -228,6 +228,40 @@ public class UserService {
                 .build();
     }
 
+    /**
+     * Single-user fetch backing the User Details page - this is the page
+     * the LOS Admin service's Employee Details page links to via the
+     * employee's userId (a Salesforce/IAM-style "click the User Id to see
+     * the user record" link).
+     */
+    @Transactional(readOnly = true)
+    public UserResponse getUserById(String targetUserId) {
+
+        String currentUserId = SecurityUtils.getCurrentUserId();
+
+        User currentUser = userRepository.findByUserId(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+
+        boolean isAdmin = currentUser.getRole().getRoleType() == RoleType.ROOT
+                || "ADMIN".equalsIgnoreCase(currentUser.getRole().getRoleName());
+
+        boolean isSelf = currentUserId.equals(targetUserId);
+
+        if (!isAdmin && !isSelf
+                && !userRepository.isVisibleToViewer(currentUserId, targetUserId)) {
+            throw new AccessDeniedException("This user is not visible to you");
+        }
+
+        User target = userRepository.findDetailedByUserId(targetUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + targetUserId));
+
+        UserResponse response = toResponse(target, target.getRole(), target.getProfile());
+
+        Map<String, SecurityFieldPermission> permissions = getCurrentUserPermissions();
+
+        return fieldFilterUtil.filter(response, permissions);
+    }
+
     @Transactional(readOnly = true)
     public Page<UserResponse> getUsers(
             String username,

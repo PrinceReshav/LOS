@@ -108,5 +108,14 @@ WHERE uv.viewerUserId = :viewerId
 
     List<User> findByRole_RoleId(String roleId);
 
+    @Query("""
+    SELECT COUNT(uv) > 0 FROM UserVisibility uv
+    WHERE uv.viewerUserId = :viewerId
+      AND uv.targetUserId = :targetUserId
+    """)
+    boolean isVisibleToViewer(
+            @Param("viewerId") String viewerId,
+            @Param("targetUserId") String targetUserId
+    );
 
 }
