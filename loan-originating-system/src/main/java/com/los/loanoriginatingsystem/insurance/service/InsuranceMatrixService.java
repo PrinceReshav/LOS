@@ -20,7 +20,6 @@ import java.util.UUID;
 /**
  * Admin CRUD + activation for both insurance rate cards, and the premium
  * calculators used at underwriting/sanction time.
- *
  * Equivalent to Salesforce's InsuranceCalculator / PropertyInsuranceCalculator
  * Apex classes, rebuilt against a real (age-banded, not exact-age-only)
  * rate table.
@@ -93,7 +92,7 @@ public class InsuranceMatrixService {
     }
 
     @Transactional
-    public PropertyInsuranceRate setActive(String id, boolean active) {
+    public PropertyInsuranceRate setPropertyInsuranceRateActive(String id, boolean active) {
         PropertyInsuranceRate entity = propertyInsuranceRateRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Property insurance rate not found: " + id));
         entity.setActive(active);

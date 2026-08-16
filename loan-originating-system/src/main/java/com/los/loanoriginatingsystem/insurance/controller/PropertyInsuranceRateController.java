@@ -33,11 +33,11 @@ public class PropertyInsuranceRateController {
 
     @PatchMapping("/{id}/activate")
     public PropertyInsuranceRate activate(@PathVariable String id) {
-        return service.setActive(id, true);
+        return service.setPropertyInsuranceRateActive(id, true);
     }
 
     @PatchMapping("/{id}/deactivate")
     public PropertyInsuranceRate deactivate(@PathVariable String id) {
-        return service.setActive(id, false);
+        return service.setPropertyInsuranceRateActive(id, false);
     }
 }
