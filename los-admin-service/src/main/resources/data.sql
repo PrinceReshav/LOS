@@ -228,3 +228,6 @@ insert into hierarchy_rules (department_code, from_role_id, to_role_id, branch_t
 ('TRAINING',   'TRAINING_EXECUTIVE',   'TRAINING_MANAGER',   null, 1, true, now(), now()),
 ('TRAINING',   'TRAINING_MANAGER',     'TRAINING_HEAD',      null, 1, true, now(), now()),
 ('TRAINING',   'TRAINING_HEAD',        'CHRO',               null, 1, true, now(), now());
+
+insert into roles (role_id, role_name, department_code, is_top_level, single_branch_only, requires_manager_branch_align, max_per_branch, max_direct_reports, active, created_at, updated_at)
+values ('SYSTEM_ADMIN', 'System Administrator', 'EXECUTIVE', true, false, false, null, null, true, now(), now());

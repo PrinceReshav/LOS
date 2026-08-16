@@ -32,4 +32,12 @@ public class ApprovalMatrix {
      * 🔥 TYPE OF DEVIATION (optional future use)
      */
     private String deviationType;
+
+    /**
+     * Whether this approval step is currently in effect. ApprovalEngine /
+     * DeviationEngine should only consider active rows when resolving the
+     * approval chain for a level - deactivating a step here (instead of
+     * deleting it) preserves history for deviations already routed through it.
+     */
+    private Boolean active = true;
 }

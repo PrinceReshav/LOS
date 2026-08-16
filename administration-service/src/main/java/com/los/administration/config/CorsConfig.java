@@ -1,3 +1,4 @@
+/*
 package com.los.administration.config;
 
 import org.springframework.context.annotation.Bean;
@@ -7,13 +8,14 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
-
-/**
+*/
+/*
  * CORS was previously left entirely unconfigured (no CorsConfigurationSource
  * bean, and .cors(...) was commented out in SecurityConfig), which means
  * every browser-based frontend call across origins - i.e. every real
  * deployment - would have been silently blocked by the browser itself.
  */
+/*
 @Configuration
 public class CorsConfig {
 
@@ -41,3 +43,4 @@ public class CorsConfig {
         return source;
     }
 }
+*/

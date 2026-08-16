@@ -11,4 +11,8 @@ public interface DocumentChecklistRepository
     List<DocumentChecklist> findByLoanProductCode(
             String loanProductCode
     );
+
+    List<DocumentChecklist> findByLoanProductCodeAndActiveTrue(
+            String loanProductCode
+    );
 }

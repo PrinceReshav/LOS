@@ -83,6 +83,20 @@ public class User extends BaseEntity {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
+    // FIX: the organizational/hierarchy role (e.g. FIELD_OFFICER,
+    // RELATIONSHIP_MANAGER, CEO) resolved from los-admin-service's role
+    // catalog via OrgRoleClient. Stored as a plain string (not a JPA
+    // relationship) because los-admin-service, not administration-service,
+    // is the system of record for this data; administration-service only
+    // keeps a validated copy of the id/name at the time the user was
+    // created, for display and for re-sending on later updates.
+    @Column(name = "org_role_id")
+    private String orgRoleId;
+
+    @Column(name = "org_role_name")
+    private String orgRoleName;
+
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_id", nullable = false)
     private Profile profile;
@@ -107,12 +121,3 @@ public class User extends BaseEntity {
 
 
 }
-
-
-
-/*
-*
-*     // ===== Password =====
-    @Column(name = "password", nullable = false)
-    private String password;
-*/

@@ -1,0 +1,11 @@
+package com.los.loanoriginatingsystem.systemconfig.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class GeneralConfigRequest {
+    @NotBlank private String configKey;
+    @NotBlank private String configValue;
+    private String description;
+}

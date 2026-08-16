@@ -60,8 +60,8 @@ public class UserController {
         return ApiResponse.success(response, "User deactivated successfully");
     }
 
-    @PatchMapping("/{userId}")
     @RequiresPermission(object = "USER", action = "UPDATE")
+    @PatchMapping("/{userId}")
     public ApiResponse<UserResponse> updateUser(
             @PathVariable String userId,
             @RequestBody UserUpdateRequest request
@@ -72,6 +72,13 @@ public class UserController {
         );
     }
 
+    // FIX: this endpoint (and /bulk-upload/commit below) previously had
+    // no @PreAuthorize/@RequiresPermission at all, while the older
+    // single-shot /bulk-upload endpoint required hasRole('ADMIN'). Since
+    // validate -> commit ends in real user creation, it needs the same
+    // guard as createUser/bulkUpload.
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequiresPermission(object = "USER", action = "CREATE")
     @PostMapping("/bulk-upload/validate")
     public ApiResponse<BulkUploadPreviewResponse> validate(
             @RequestParam("file") MultipartFile file
@@ -82,6 +89,8 @@ public class UserController {
         );
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequiresPermission(object = "USER", action = "CREATE")
     @PostMapping("/bulk-upload/commit")
     public ApiResponse<BulkUserUploadResult> commit(
             @RequestParam String uploadId
@@ -93,6 +102,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @RequiresPermission(object = "USER", action = "CREATE")
     @PostMapping("/bulk-upload")
     public ApiResponse<BulkUserUploadResult> bulkUpload(
             @RequestParam("file") MultipartFile file

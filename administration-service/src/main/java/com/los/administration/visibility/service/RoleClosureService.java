@@ -8,6 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -39,6 +40,46 @@ public class RoleClosureService {
                         pc.getDepth() + 1
                 );
             }
+        }
+    }
+
+    /**
+     * FIX: RoleService.updateRole previously changed a role's parent
+     * without ever touching role_closure, so every consumer of the
+     * closure table (UserRepository.findSubordinateUsers/findManagers,
+     * and therefore IncrementalVisibilityService) kept using the stale
+     * ancestor chain from before the move - forever, until the app was
+     * restarted or the row was manually fixed.
+     *
+     * This recomputes the ancestor chain for {@code role} and cascades
+     * the same recomputation down its entire subtree, since every
+     * descendant's ancestor chain also runs through the moved role.
+     */
+    @Transactional
+    public void rebuildForRole(Role role) {
+
+        // Capture the role's current descendants BEFORE we start
+        // deleting anything, since deleting closure rows is how we
+        // "forget" the old ancestor chain.
+        List<String> descendantIds = new ArrayList<>();
+        repository.findByAncestorRoleId(role.getRoleId())
+                .forEach(rc -> {
+                    if (!rc.getDescendantRoleId().equals(role.getRoleId())) {
+                        descendantIds.add(rc.getDescendantRoleId());
+                    }
+                });
+
+        // Wipe role's own stale ancestor chain (including its self row)
+        // and rebuild it against the new parent.
+        repository.deleteByDescendantRoleId(role.getRoleId());
+        addRole(role);
+
+        // Cascade: every descendant's ancestor chain also passes through
+        // role, so it needs to be recomputed too. We rebuild top-down
+        // using the live parent/children association rather than the
+        // (now partially stale) closure table.
+        for (Role child : role.getChildren()) {
+            rebuildForRole(child);
         }
     }
 

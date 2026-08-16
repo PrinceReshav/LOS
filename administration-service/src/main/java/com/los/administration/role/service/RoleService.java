@@ -27,6 +27,13 @@ public class RoleService {
             throw new IllegalArgumentException("Role name already exists");
         }
 
+        // FIX: previously only roleName was checked for uniqueness; a
+        // duplicate roleId used to fall through to the DB unique
+        // constraint and surface as an ugly DataIntegrityViolationException.
+        if (roleRepository.existsByRoleId(request.getRoleId())) {
+            throw new IllegalArgumentException("Role id already exists");
+        }
+
         Role parent = resolveParent(request.getParentRoleId());
 
         Role role = Role.builder()
@@ -65,6 +72,12 @@ public class RoleService {
             role.setParentRole(parent);
             role.setHierarchyLevel(parent != null ? nullSafeLevel(parent) + 1 : 0);
             validateNoCycle(role);
+
+            Role saved = roleRepository.save(role);
+
+            roleClosureService.rebuildForRole(saved);
+
+            return toResponse(saved);
         }
 
         return toResponse(roleRepository.save(role));

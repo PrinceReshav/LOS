@@ -65,8 +65,15 @@ public class EmployeeService {
                 .email(event.email())
                 .mobile(event.mobile())
 
-                .roleId(event.roleId())
-                .roleName(event.roleName())
+                // FIX: was event.roleId()/event.roleName() -
+                // administration-service's system-access role
+                // (role_admin/role_sales), which doesn't exist in this
+                // service's own role catalog and caused "Role not
+                // found" downstream in EmployeeHierarchyValidator. Use
+                // the organizational role instead, same as the gRPC
+                // path in EmployeeGrpcService.
+                .roleId(event.orgRoleId())
+                .roleName(event.orgRoleName())
 
                 .profileId(event.profileId())
                 .profileName(event.profileName())

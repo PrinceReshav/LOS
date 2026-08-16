@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.los.administration.auth.util.SecurityUtils;
 import com.los.administration.common.exception.ResourceNotFoundException;
 import com.los.administration.grpc.EmployeeGrpcClient;
+import com.los.administration.orgrole.client.OrgRoleClient;
+import com.los.administration.orgrole.dto.OrgRoleResponse;
 import com.los.administration.license.model.UserLicenseType;
 import com.los.administration.outbox.model.OutboxEvent;
 import com.los.administration.outbox.model.OutboxStatus;
@@ -43,6 +45,7 @@ public class UserCreationService {
     private final UserVisibilityService userVisibilityService;
     private final IncrementalVisibilityService incrementalVisibilityService;
     private final EmployeeGrpcClient employeeGrpcClient;
+    private final OrgRoleClient orgRoleClient;
 
 
     private static final String USER_PREFIX = "USR_";
@@ -53,8 +56,8 @@ public class UserCreationService {
             String createdByUserId
     ) {
 
-       // String currentUser =
-       //         SecurityUtils.getCurrentUserId();
+        // String currentUser =
+        //         SecurityUtils.getCurrentUserId();
 
         String currentUser = createdByUserId;
 
@@ -75,6 +78,16 @@ public class UserCreationService {
                                 "Profile not found"
                         )
                 );
+
+        // FIX: resolve the ORGANIZATIONAL role (FIELD_OFFICER,
+        // RELATIONSHIP_MANAGER, CEO, ...) from los-admin-service's own
+        // role catalog up front, and fail fast here with a clean error
+        // if it doesn't exist - instead of silently forwarding
+        // administration-service's system-access role (role_admin/
+        // role_sales) and letting it blow up later as "Role not found"
+        // when a branch or reporting manager is assigned.
+        OrgRoleResponse orgRole =
+                orgRoleClient.getActiveOrgRole(req.getOrgRoleId());
 
         if (userRepository.existsByUsername(
                 req.getUsername()
@@ -117,6 +130,8 @@ public class UserCreationService {
 
         user.setRole(role);
         user.setProfile(profile);
+        user.setOrgRoleId(orgRole.getRoleId());
+        user.setOrgRoleName(orgRole.getRoleName());
 
         user.setLicenseType(
                 UserLicenseType.valueOf(
@@ -147,6 +162,14 @@ public class UserCreationService {
 
                         role.getRoleId(),
                         role.getRoleName(),
+
+                        // FIX: added so the Kafka/outbox fallback path in
+                        // los-admin-service (UserCreatedConsumer ->
+                        // EmployeeService.createEmployeeFromUserEvent)
+                        // also gets the real org role, instead of falling
+                        // back to administration-service's access role.
+                        orgRole.getRoleId(),
+                        orgRole.getRoleName(),
 
                         profile.getProfileId(),
                         profile.getProfileName()
@@ -195,8 +218,13 @@ public class UserCreationService {
                             saved.getEmail(),
                             saved.getMobile(),
 
-                            saved.getRole().getRoleId(),
-                            saved.getRole().getRoleName(),
+                            // FIX: was saved.getRole().getRoleId()/getRoleName()
+                            // (administration-service's access role,
+                            // e.g. "role_sales") - this is the exact
+                            // change that fixes "Role not found" during
+                            // branch/reporting-manager assignment.
+                            saved.getOrgRoleId(),
+                            saved.getOrgRoleName(),
 
                             saved.getProfile().getProfileId(),
                             saved.getProfile().getProfileName()

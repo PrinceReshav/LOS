@@ -2,6 +2,7 @@ package com.los.administration.profile.service;
 
 import com.los.administration.common.exception.ResourceNotFoundException;
 import com.los.administration.profile.dto.ProfileRequest;
+import com.los.administration.profile.dto.ProfileResponse;
 import com.los.administration.profile.model.Profile;
 import com.los.administration.profile.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ public class ProfileService {
     private final ProfileRepository profileRepository;
 
     @Transactional
-    public Profile createProfile(ProfileRequest request) {
+    public ProfileResponse createProfile(ProfileRequest request) {
 
         if (profileRepository.existsByProfileName(request.getProfileName())) {
             throw new IllegalArgumentException("Profile name already exists");
@@ -35,33 +36,42 @@ public class ProfileService {
                 .active(true)
                 .build();
 
-        return profileRepository.save(profile);
+        return toResponse(profileRepository.save(profile));
     }
 
+
     @Transactional
-    public Profile updateProfile(String profileId, ProfileRequest request) {
+    public ProfileResponse updateProfile(String profileId, ProfileRequest request) {
 
         Profile profile = getEntity(profileId);
 
-        if (request.getProfileName() != null) profile.setProfileName(request.getProfileName());
-        if (request.getDescription() != null) profile.setDescription(request.getDescription());
-        if (request.getActive() != null) profile.setActive(request.getActive());
+        if (request.getProfileName() != null)
+            profile.setProfileName(request.getProfileName());
 
-        return profileRepository.save(profile);
+        if (request.getDescription() != null)
+            profile.setDescription(request.getDescription());
+
+        if (request.getActive() != null)
+            profile.setActive(request.getActive());
+
+        return toResponse(profileRepository.save(profile));
     }
 
+
+
     @Transactional
-    public Profile setActive(String profileId, boolean active) {
+    public ProfileResponse setActive(String profileId, boolean active) {
 
         Profile profile = getEntity(profileId);
 
         if (Boolean.TRUE.equals(profile.getSystemDefined()) && !active) {
-            throw new IllegalStateException("System-defined profiles cannot be deactivated: " + profileId);
+            throw new IllegalStateException(
+                    "System-defined profiles cannot be deactivated: " + profileId);
         }
 
         profile.setActive(active);
 
-        return profileRepository.save(profile);
+        return toResponse(profileRepository.save(profile));
     }
 
     @Transactional(readOnly = true)
@@ -72,12 +82,27 @@ public class ProfileService {
     }
 
     @Transactional(readOnly = true)
-    public Profile getById(String profileId) {
-        return getEntity(profileId);
+    public ProfileResponse getById(String profileId) {
+        return toResponse(getEntity(profileId));
     }
 
     @Transactional(readOnly = true)
-    public List<Profile> getAllProfiles() {
-        return profileRepository.findAll();
+    public List<ProfileResponse> getAllProfiles() {
+
+
+        return profileRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    private ProfileResponse toResponse(Profile profile) {
+        return ProfileResponse.builder()
+                .profileId(profile.getProfileId())
+                .profileName(profile.getProfileName())
+                .description(profile.getDescription())
+                .systemDefined(profile.getSystemDefined())
+                .active(profile.getActive())
+                .build();
     }
 }

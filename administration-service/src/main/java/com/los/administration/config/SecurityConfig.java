@@ -39,8 +39,8 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
 
                 // Enable CORS (see CorsConfig for the actual allowed origins/methods)
-                .cors(cors -> {})
-
+                // .cors(cors -> {})
+                .cors(AbstractHttpConfigurer::disable)
                 // Required for H2 console
                 .headers(headers ->
                         headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)

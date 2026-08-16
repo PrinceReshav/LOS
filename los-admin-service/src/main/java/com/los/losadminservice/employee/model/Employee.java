@@ -62,6 +62,27 @@ public class Employee {
 
     private String managerEmployeeId;
 
+    /**
+     * Deviation/commercial-approval level this employee is authorised to
+     * approve at (0-5, matching loan-originating-system's
+     * rules.enums.ApprovalLevel / UserRole levels). Distinct from
+     * roleId/roleName above, which drive general RBAC - this is
+     * specifically "how far up the deviation/commercial-approval chain can
+     * this person sign off", independent of their org/profile role.
+     * Null means the employee has no approval authority.
+     */
+    @Column(name = "approval_level")
+    private Integer approvalLevel;
+
+    /**
+     * The approval role code this employee acts as when approving a
+     * deviation or commercial-matrix escalation, e.g. "CBM", "CCM", "BH".
+     * Must match one of loan-originating-system's rules.enums.UserRole
+     * codes for cross-service approval routing to resolve correctly.
+     */
+    @Column(name = "approver_role_code")
+    private String approverRoleCode;
+
     private Boolean active;
 
     private LocalDateTime createdAt;

@@ -22,6 +22,7 @@ public class EmployeeController {
 
     private final EmployeeService employeeService;
     private final EmployeeRepository employeeRepository;
+    private final com.los.losadminservice.employee.service.EmployeeApprovalService employeeApprovalService;
 
     // Get all employees
     @GetMapping
@@ -119,5 +120,37 @@ public class EmployeeController {
 
         return employeeService
                 .getTeam(employeeId);
+    }
+
+    // ================= Deviation / commercial-approval level =================
+
+    /**
+     * Sets the deviation/commercial-approval level + role code an employee
+     * is authorised to approve at. Independent of the employee's general
+     * RBAC role (roleId/roleName) - this specifically drives how far up
+     * the deviation and commercial-matrix approval chain this person can
+     * sign off (see loan-originating-system's ApprovalMatrix / rules.enums.UserRole).
+     */
+    @PatchMapping("/{employeeId}/approval-level")
+    public Employee setApprovalLevel(
+            @PathVariable String employeeId,
+            @jakarta.validation.Valid @RequestBody
+            com.los.losadminservice.employee.dto.EmployeeApprovalLevelRequest request
+    ) {
+        return employeeApprovalService.setApprovalLevel(employeeId, request);
+    }
+
+    /**
+     * Employees at the given branch authorised to approve as the given
+     * role code - used by loan-originating-system to populate Approver 1 /
+     * Approver 2 once the Commercial Matrix / deviation rules have
+     * resolved which role must approve.
+     */
+    @GetMapping("/eligible-approvers")
+    public List<Employee> eligibleApprovers(
+            @RequestParam String branchId,
+            @RequestParam String roleCode
+    ) {
+        return employeeApprovalService.findEligibleApprovers(branchId, roleCode);
     }
 }

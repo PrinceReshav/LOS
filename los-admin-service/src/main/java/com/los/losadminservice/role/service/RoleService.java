@@ -72,13 +72,40 @@ public class RoleService {
         return toResponse(roleRepository.save(role));
     }
 
-    @Transactional(readOnly = true)
+    /*
+    *@Transactional(readOnly = true)
     public Role getEntity(String roleId) {
 
         return roleRepository.findById(roleId.toUpperCase())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Role not found: " + roleId)
                 );
+    }
+    */
+
+
+    @Transactional(readOnly = true)
+    public Role getEntity(String roleId) {
+
+        System.out.println("\n==============================");
+        System.out.println("Searching Role: " + roleId);
+
+        List<Role> roles = roleRepository.findAll();
+
+        System.out.println("Available Roles:");
+        for (Role r : roles) {
+            System.out.println(" - " + r.getRoleId());
+        }
+
+        Role role = roleRepository.findById(roleId.toUpperCase()).orElse(null);
+
+        System.out.println("Lookup Result = " + role);
+
+        if (role == null) {
+            throw new ResourceNotFoundException("Role not found: " + roleId);
+        }
+
+        return role;
     }
 
     @Transactional(readOnly = true)

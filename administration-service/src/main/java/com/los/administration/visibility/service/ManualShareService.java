@@ -1,5 +1,6 @@
 package com.los.administration.visibility.service;
 
+import com.los.administration.common.exception.ResourceNotFoundException;
 import com.los.administration.user.repository.UserRepository;
 import com.los.administration.visibility.dto.ManualShareRequest;
 import com.los.administration.visibility.model.AccessType;
@@ -10,12 +11,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ManualShareService {
 
     private final ManualShareRepository repository;
-    private final UserVisibilityService userVisibilityService;
+    // FIX: userVisibilityService was injected but never called - it was
+    // dead weight. incrementalVisibilityService.onUserCreated(...) now
+    // correctly delegates into UserVisibilityService.rebuildVisibilityForUser
+    // (which reads this very ManualShare table), so this dependency is
+    // no longer needed here at all.
     private final UserRepository userRepository;
     private final IncrementalVisibilityService incrementalVisibilityService;
 
@@ -32,8 +39,13 @@ public class ManualShareService {
 
         // ✅ rebuild only for owner
         User owner = userRepository.findByUserId(req.getOwnerUserId())
-                .orElseThrow();
+                .orElseThrow(() -> new ResourceNotFoundException("Owner user not found: " + req.getOwnerUserId()));
 
         incrementalVisibilityService.onUserCreated(owner);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ManualShare> getAll() {
+        return repository.findAll();
     }
 }

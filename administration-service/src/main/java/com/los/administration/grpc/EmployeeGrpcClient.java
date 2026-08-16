@@ -20,8 +20,15 @@ public class EmployeeGrpcClient {
             String email,
             String mobile,
 
-            String roleId,
-            String roleName,
+            // FIX: this MUST be the organizational/hierarchy role id
+            // (e.g. FIELD_OFFICER, RELATIONSHIP_MANAGER) resolved and
+            // validated against los-admin-service's own role catalog via
+            // OrgRoleClient - NOT administration-service's system-access
+            // role (role_admin/role_sales). Passing the access role here
+            // is what caused "Role not found" during branch/manager
+            // assignment.
+            String orgRoleId,
+            String orgRoleName,
 
             String profileId,
             String profileName
@@ -40,8 +47,8 @@ public class EmployeeGrpcClient {
                             .setEmail(email)
                             .setMobile(mobile)
 
-                            .setRoleId(roleId)
-                            .setRoleName(roleName)
+                            .setOrgRoleId(orgRoleId)
+                            .setOrgRoleName(orgRoleName)
 
                             .setProfileId(profileId)
                             .setProfileName(profileName)

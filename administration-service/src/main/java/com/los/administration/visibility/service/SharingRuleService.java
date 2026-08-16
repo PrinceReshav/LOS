@@ -1,5 +1,6 @@
 package com.los.administration.visibility.service;
 
+import com.los.administration.common.exception.ResourceNotFoundException;
 import com.los.administration.role.model.Role;
 import com.los.administration.role.repository.RoleRepository;
 import com.los.administration.user.model.User;
@@ -20,7 +21,11 @@ public class SharingRuleService {
 
     private final SharingRuleRepository repository;
     private final RoleRepository roleRepository;
-    private final UserVisibilityService userVisibilityService;
+    // FIX: userVisibilityService was injected but never called - dead
+    // weight. incrementalVisibilityService.onUserCreated(...) now
+    // correctly delegates into UserVisibilityService.rebuildVisibilityForUser
+    // (which reads this very SharingRule table), so this dependency is
+    // no longer needed here at all.
     private final UserRepository userRepository;
     private final IncrementalVisibilityService incrementalVisibilityService;
 
@@ -28,10 +33,10 @@ public class SharingRuleService {
     public void createRule(SharingRuleRequest req) {
 
         Role fromRole = roleRepository.findByRoleName(req.getFromRoleName())
-                .orElseThrow(() -> new RuntimeException("From role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("From role not found: " + req.getFromRoleName()));
 
         Role toRole = roleRepository.findByRoleName(req.getToRoleName())
-                .orElseThrow(() -> new RuntimeException("To role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("To role not found: " + req.getToRoleName()));
 
         SharingRule rule = SharingRule.builder()
                 .fromRoleId(fromRole.getRoleId())
@@ -42,8 +47,6 @@ public class SharingRuleService {
 
         repository.save(rule);
 
-
-
         // ✅ rebuild for ALL users of that role
         List<User> affectedUsers = userRepository.findAll().stream()
                 .filter(u -> u.getRole().getRoleId().equals(fromRole.getRoleId()))
@@ -52,5 +55,10 @@ public class SharingRuleService {
         for (User user : affectedUsers) {
             incrementalVisibilityService.onUserCreated(user);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<SharingRule> getAll() {
+        return repository.findAll();
     }
 }

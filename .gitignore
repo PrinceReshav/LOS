@@ -11,7 +11,20 @@
 
 # OS Files
 .DS_Store
-Thumbs.dbadministration-service.zip
---bootstrap-server
-administration-service.zip
---bootstrap-server
+Thumbs.db
+
+# Maven build folders
+target/
+*/target/
+
+# Java compiled files
+*.class
+
+# VS Code
+.vscode/
+
+# Build output
+out/
+
+# Archives
+*.zip
