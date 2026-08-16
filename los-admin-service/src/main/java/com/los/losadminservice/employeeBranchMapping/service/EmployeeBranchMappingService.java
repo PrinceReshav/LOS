@@ -1,13 +1,11 @@
 package com.los.losadminservice.employeeBranchMapping.service;
 
-import com.los.losadminservice.branch.model.Branch;
-import com.los.losadminservice.branch.repository.BranchRepository;
+import com.los.losadminservice.common.exception.BusinessRuleViolationException;
+import com.los.losadminservice.common.exception.ResourceNotFoundException;
 import com.los.losadminservice.employee.model.Employee;
-import com.los.losadminservice.employee.repository.EmployeeRepository;
 import com.los.losadminservice.employee.validator.BranchCapacityValidator;
 import com.los.losadminservice.employeeBranchMapping.dto.EmployeeBranchMappingCreateRequest;
 import com.los.losadminservice.employeeBranchMapping.dto.EmployeeBranchMappingResponse;
-import com.los.losadminservice.employeeBranchMapping.mapper.EmployeeBranchMappingMapper;
 import com.los.losadminservice.employeeBranchMapping.model.EmployeeBranchMapping;
 import com.los.losadminservice.employeeBranchMapping.repository.EmployeeBranchMappingRepository;
 import com.los.losadminservice.employeeBranchMapping.validator.EmployeeBranchMappingValidator;
@@ -24,46 +22,32 @@ public class EmployeeBranchMappingService {
 
     private final EmployeeBranchMappingRepository repository;
     private final EmployeeBranchMappingValidator validator;
-    private final EmployeeRepository employeeRepository;
     private final BranchCapacityValidator branchCapacityValidator;
-    private final BranchRepository branchRepository;
 
     @Transactional
-    public EmployeeBranchMapping create(
-            EmployeeBranchMappingCreateRequest req
-    ) {
+    public EmployeeBranchMapping create(EmployeeBranchMappingCreateRequest req) {
 
-        validator.validateCreate(
-                req.getEmployeeId(),
-                req.getBranchId()
-        );
+        Employee employee = validator.validateCreate(req.getEmployeeId(), req.getBranchId());
 
-        Employee employee = employeeRepository
-                .findByEmployeeId(req.getEmployeeId())
-                .orElseThrow(() ->
-                        new RuntimeException("Employee not found"));
+        // "1 branch can have only 2 Relationship Managers" (and any other
+        // role-specific per-branch cap) - fully data-driven, see Role.maxPerBranch.
+        branchCapacityValidator.validateBranchCapacity(req.getBranchId(), employee.getRoleId());
 
-        /*
-         * BUSINESS RULES
-         *
-         * RM -> max 1 per branch
-         * RO -> max 2 per branch
-         */
-        branchCapacityValidator.validateBranchCapacity(
-                req.getBranchId(),
-                employee.getRoleId()
-        );
+        List<EmployeeBranchMapping> existingActiveMappings =
+                repository.findByEmployeeIdAndActiveTrue(req.getEmployeeId());
 
-        /*
-         * RO and RM can only belong to ONE branch
-         */
-        validateSingleBranchRoles(employee);
+        boolean makePrimary = Boolean.TRUE.equals(req.getPrimaryBranch())
+                || existingActiveMappings.isEmpty();
 
+        if (makePrimary) {
+            demoteCurrentPrimary(req.getEmployeeId());
+        }
 
         EmployeeBranchMapping mapping =
                 EmployeeBranchMapping.builder()
                         .employeeId(req.getEmployeeId())
                         .branchId(req.getBranchId())
+                        .primaryBranch(makePrimary)
                         .active(true)
                         .assignedAt(LocalDateTime.now())
                         .build();
@@ -72,129 +56,74 @@ public class EmployeeBranchMappingService {
     }
 
     @Transactional(readOnly = true)
-    public List<EmployeeBranchMapping> getEmployeeMappings(
-            String employeeId
-    ) {
+    public List<EmployeeBranchMapping> getEmployeeMappings(String employeeId) {
 
-        return repository.findByEmployeeIdAndActiveTrue(
-                employeeId
-        );
+        return repository.findByEmployeeIdAndActiveTrue(employeeId);
     }
 
     @Transactional
     public void deactivate(Long id) {
 
-        EmployeeBranchMapping mapping =
-                repository.findById(id)
-                        .orElseThrow(() ->
-                                new RuntimeException("Mapping not found"));
+        EmployeeBranchMapping mapping = getById(id);
+
+        boolean wasPrimary = Boolean.TRUE.equals(mapping.getPrimaryBranch());
 
         mapping.setActive(false);
+        mapping.setPrimaryBranch(false);
         mapping.setRelievedAt(LocalDateTime.now());
 
         repository.save(mapping);
+
+        if (wasPrimary) {
+            // Promote another active mapping (if any) to primary so the
+            // employee always has exactly one primary branch while they
+            // have at least one active mapping.
+            repository.findByEmployeeIdAndActiveTrue(mapping.getEmployeeId())
+                    .stream()
+                    .findFirst()
+                    .ifPresent(next -> {
+                        next.setPrimaryBranch(true);
+                        repository.save(next);
+                    });
+        }
     }
 
+    /**
+     * Explicitly switches which of an employee's active branch mappings is
+     * the primary one - used from the Employee Details page as well as the
+     * Employee-Branch Mapping screen.
+     */
+    @Transactional
+    public EmployeeBranchMapping setPrimary(Long id) {
+
+        EmployeeBranchMapping mapping = getById(id);
+
+        if (!Boolean.TRUE.equals(mapping.getActive())) {
+            throw new BusinessRuleViolationException("Cannot make an inactive mapping primary");
+        }
+
+        demoteCurrentPrimary(mapping.getEmployeeId());
+
+        mapping.setPrimaryBranch(true);
+
+        return repository.save(mapping);
+    }
+
+    private void demoteCurrentPrimary(String employeeId) {
+
+        repository.findByEmployeeIdAndActiveTrueAndPrimaryBranchTrue(employeeId)
+                .ifPresent(current -> {
+                    current.setPrimaryBranch(false);
+                    repository.save(current);
+                });
+    }
 
     @Transactional(readOnly = true)
     public EmployeeBranchMapping getById(Long id) {
 
         return repository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Mapping not found"
-                        ));
+                .orElseThrow(() -> new ResourceNotFoundException("Mapping not found: " + id));
     }
-
-    /*
-     * RM and RO can only have one branch.
-     */
-    private void validateSingleBranchRoles(Employee employee) {
-
-        String roleId = employee.getRoleId();
-
-        if (
-                "RELATIONSHIP_OFFICER".equals(roleId)
-                        || "RELATIONSHIP_MANAGER".equals(roleId)
-        ) {
-
-            List<EmployeeBranchMapping> existingMappings =
-                    repository.findByEmployeeIdAndActiveTrue(
-                            employee.getEmployeeId()
-                    );
-
-            if (!existingMappings.isEmpty()) {
-
-                throw new RuntimeException(
-                        roleId + " can only belong to one branch"
-                );
-            }
-        }
-    }
-
-    /*@Transactional(readOnly = true)
-    *public List<EmployeeBranchMappingResponse> getAll() {
-
-        List<EmployeeBranchMapping> mappings =
-                repository.findAllByActiveTrue();
-
-        return mappings
-                .stream()
-                .map(mapping -> {
-
-                    Employee employee =
-                            employeeRepository
-                                    .findByEmployeeId(
-                                            mapping.getEmployeeId()
-                                    )
-                                    .orElse(null);
-
-                    Branch branch =
-                            branchRepository
-                                    .findById(
-                                            mapping.getBranchId()
-                                    )
-                                    .orElse(null);
-
-                    return EmployeeBranchMappingMapper.toResponse(
-                            mapping,
-                            employee,
-                            branch
-                    );
-                })
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public EmployeeBranchMappingResponse getResponseById(
-            Long id
-    ) {
-
-        EmployeeBranchMapping mapping =
-                getById(id);
-
-        Employee employee =
-                employeeRepository
-                        .findByEmployeeId(
-                                mapping.getEmployeeId()
-                        )
-                        .orElse(null);
-
-        Branch branch =
-                branchRepository
-                        .findById(
-                                mapping.getBranchId()
-                        )
-                        .orElse(null);
-
-        return EmployeeBranchMappingMapper.toResponse(
-                mapping,
-                employee,
-                branch
-        );
-    }
-    */
-
 
     @Transactional(readOnly = true)
     public List<EmployeeBranchMappingResponse> getAll() {
@@ -203,15 +132,15 @@ public class EmployeeBranchMappingService {
     }
 
     @Transactional(readOnly = true)
-    public EmployeeBranchMappingResponse getResponseById(
-            Long id
-    ) {
+    public List<EmployeeBranchMappingResponse> getResponsesForEmployee(String employeeId) {
+
+        return repository.findActiveResponsesByEmployeeId(employeeId);
+    }
+
+    @Transactional(readOnly = true)
+    public EmployeeBranchMappingResponse getResponseById(Long id) {
 
         return repository.findResponseById(id)
-                .orElseThrow(
-                        () -> new RuntimeException(
-                                "Mapping not found"
-                        )
-                );
+                .orElseThrow(() -> new ResourceNotFoundException("Mapping not found: " + id));
     }
 }

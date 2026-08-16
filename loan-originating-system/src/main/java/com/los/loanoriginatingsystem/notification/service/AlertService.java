@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -17,17 +18,14 @@ public class AlertService {
 
     public void sendFailureAlert(TempLoanApplication temp, Exception e) {
 
-        NotificationRequest req = new NotificationRequest();
-
-        req.setType("EMAIL");
-        req.setRecipients(List.of("admin@los.com"));
-
-        req.setSubject("🚨 Loan Processing FAILED_FINAL");
-
-        req.setBody(
-                "TempId: " + temp.getId() + "\n" +
-                        "LeadId: " + temp.getLeadId() + "\n" +
-                        "Reason: " + e.getMessage()
+        NotificationRequest req = new NotificationRequest(
+                "SYSTEM_FAILURE_ALERT",
+                List.of("admin@los.com"),
+                Map.of(
+                        "tempId", temp.getId(),
+                        "leadId", String.valueOf(temp.getLeadId()),
+                        "reason", String.valueOf(e.getMessage())
+                )
         );
 
         client.send(req);

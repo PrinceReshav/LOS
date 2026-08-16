@@ -1,7 +1,6 @@
 package com.los.administration.user.dto;
 
 import com.los.administration.license.model.UserLicenseType;
-import jakarta.persistence.Column;
 import lombok.Builder;
 import lombok.Data;
 
@@ -22,8 +21,14 @@ public class UserResponse {
 
     private String employeeId;
 
-   // @Column(name = "role_name", nullable = false, unique = true)
+    // @Column(name = "role_name", nullable = false, unique = true)
     private String roleName;
+
+    // The organizational/hierarchy role (e.g. FIELD_OFFICER) resolved
+    // from los-admin-service - distinct from roleName above, which is
+    // administration-service's own system-access role (ADMIN/SALES).
+    private String orgRoleId;
+    private String orgRoleName;
 
     private String profileName;
 

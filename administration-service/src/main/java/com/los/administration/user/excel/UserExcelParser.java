@@ -11,6 +11,11 @@ import java.util.*;
 @Component
 public class UserExcelParser implements ExcelParser<UserCreateRequest> {
 
+    // FIX: "licenseType" was never listed as required and never parsed,
+    // even though UserCreationService.createUser does
+    // UserLicenseType.valueOf(req.getLicenseType()) unconditionally -
+    // every single bulk-uploaded row previously failed with an NPE
+    // because licenseType came back null for every row.
     private static final List<String> REQUIRED_HEADERS = List.of(
             "username",
             "email",
@@ -20,7 +25,13 @@ public class UserExcelParser implements ExcelParser<UserCreateRequest> {
             "lastName",
             "employeeId",
             "roleName",
-            "profileName"
+            // FIX: bulk upload never captured the organizational role
+            // either - same gap as single-user creation. Without it,
+            // every bulk-created employee would hit "Role not found"
+            // the first time a branch or reporting manager was assigned.
+            "orgRoleId",
+            "profileName",
+            "licenseType"
     );
 
     @Override
@@ -56,7 +67,10 @@ public class UserExcelParser implements ExcelParser<UserCreateRequest> {
                 req.setLastName(get(row, headerMap, "lastName"));
                 req.setEmployeeId(get(row, headerMap, "employeeId"));
                 req.setRoleName(get(row, headerMap, "roleName"));
+                req.setOrgRoleId(get(row, headerMap, "orgRoleId"));
                 req.setProfileName(get(row, headerMap, "profileName"));
+                // FIX: previously missing entirely.
+                req.setLicenseType(get(row, headerMap, "licenseType"));
 
                 users.add(req);
             }
@@ -93,51 +107,3 @@ public class UserExcelParser implements ExcelParser<UserCreateRequest> {
         return cell.toString().trim();
     }
 }
-
-
-/*
-*@Component
-public class UserExcelParser implements ExcelParser<UserCreateRequest> {
-
-    @Override
-    public List<UserCreateRequest> parse(MultipartFile file) {
-
-        List<UserCreateRequest> users = new ArrayList<>();
-
-        try (InputStream is = file.getInputStream();
-             Workbook workbook = WorkbookFactory.create(is)) {
-
-            Sheet sheet = workbook.getSheetAt(0);
-
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) { // skip header
-                Row row = sheet.getRow(i);
-                if (row == null) continue;
-
-                UserCreateRequest req = new UserCreateRequest();
-                req.setUsername(getString(row, 0));
-                req.setEmail(getString(row, 1));
-                req.setMobile(getString(row, 2));
-                req.setAlias(getString(row, 3));
-                req.setFirstName(getString(row, 4));
-                req.setMiddleName(getString(row, 5));
-                req.setLastName(getString(row, 6));
-                req.setEmployeeId(getString(row, 7));
-                req.setRoleName(getString(row, 8));
-                req.setProfileName(getString(row, 9));
-
-                users.add(req);
-            }
-
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid Excel file format", e);
-        }
-
-        return users;
-    }
-
-    private String getString(Row row, int index) {
-        Cell cell = row.getCell(index, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-        return cell.toString().trim();
-    }
-}
-*/

@@ -1,6 +1,15 @@
 package com.los.losadminservice.employee.service;
 
 import com.los.events.UserCreatedEvent;
+import com.los.losadminservice.common.exception.BusinessRuleViolationException;
+import com.los.losadminservice.common.exception.ResourceNotFoundException;
+import com.los.losadminservice.department.service.DepartmentService;
+import com.los.losadminservice.department.model.Department;
+import com.los.losadminservice.designation.service.DesignationService;
+import com.los.losadminservice.designation.model.Designation;
+import com.los.losadminservice.employee.audit.EmployeeManagerHistory;
+import com.los.losadminservice.employee.audit.EmployeeManagerHistoryRepository;
+import com.los.losadminservice.employee.audit.ManagerChangeType;
 import com.los.losadminservice.employee.dto.EmployeeTeamResponse;
 import com.los.losadminservice.employee.model.Employee;
 import com.los.losadminservice.employee.repository.EmployeeRepository;
@@ -25,6 +34,9 @@ public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final HierarchyRulesEngine hierarchyRulesEngine;
+    private final EmployeeManagerHistoryRepository managerHistoryRepository;
+    private final DepartmentService departmentService;
+    private final DesignationService designationService;
 
     @Transactional
     public Employee createEmployeeFromUserEvent(UserCreatedEvent event){
@@ -53,11 +65,27 @@ public class EmployeeService {
                 .email(event.email())
                 .mobile(event.mobile())
 
-                .roleId(event.roleId())
-                .roleName(event.roleName())
+                // FIX: was event.roleId()/event.roleName() -
+                // administration-service's system-access role
+                // (role_admin/role_sales), which doesn't exist in this
+                // service's own role catalog and caused "Role not
+                // found" downstream in EmployeeHierarchyValidator. Use
+                // the organizational role instead, same as the gRPC
+                // path in EmployeeGrpcService.
+                .roleId(event.orgRoleId())
+                .roleName(event.orgRoleName())
 
                 .profileId(event.profileId())
                 .profileName(event.profileName())
+
+                // Department / Designation are NOT part of the User-service
+                // contract - HR/Admin assigns them explicitly afterwards via
+                // assignClassification(), which is also where the manager
+                // and branch mapping flow begins.
+                .departmentId(null)
+                .departmentName(null)
+                .designationId(null)
+                .designationName(null)
 
                 .managerEmployeeId(null)
                 .active(true)
@@ -89,22 +117,68 @@ public class EmployeeService {
                 .findByEmployeeIdContainingIgnoreCaseOrFullNameContainingIgnoreCase(q,q);
     }
 
+    /**
+     * HR/Admin assigns (or changes) the Department + Designation for an
+     * employee. Required before a reporting manager or branch mapping can
+     * be created, since the hierarchy engine is department-scoped.
+     *
+     * If the employee's department changes and their existing manager is no
+     * longer valid under the new department's hierarchy rules, the manager
+     * is cleared (never left silently inconsistent) and logged - the caller
+     * / frontend should then prompt for a fresh manager assignment.
+     */
+    @Transactional
+    public Employee assignClassification(String employeeId, String departmentId, String designationId) {
+
+        Employee employee = getEmployeeOrThrow(employeeId);
+
+        Department department = departmentService.getEntity(departmentId);
+        Designation designation = designationService.getEntity(designationId);
+
+        if (designation.getDepartmentCode() != null
+                && !designation.getDepartmentCode().equalsIgnoreCase(department.getCode())) {
+            throw new BusinessRuleViolationException(
+                    "Designation " + designation.getName() + " does not belong to department " + department.getName()
+            );
+        }
+
+        employee.setDepartmentId(department.getCode());
+        employee.setDepartmentName(department.getName());
+        employee.setDesignationId(designation.getDesignationId());
+        employee.setDesignationName(designation.getName());
+
+        if (employee.getManagerEmployeeId() != null) {
+
+            try {
+                hierarchyRulesEngine.validateEmployeeHierarchy(employee, employee.getManagerEmployeeId());
+            } catch (RuntimeException ex) {
+
+                log.warn(
+                        "Clearing manager for employeeId={} after classification change: {}",
+                        employeeId, ex.getMessage()
+                );
+
+                recordManagerHistory(
+                        employeeId,
+                        employee.getManagerEmployeeId(),
+                        null,
+                        ManagerChangeType.REMOVED,
+                        "Auto-cleared after department/designation change: " + ex.getMessage()
+                );
+
+                employee.setManagerEmployeeId(null);
+            }
+        }
+
+        return employeeRepository.save(employee);
+    }
+
     @Transactional
     public Employee assignManager(String employeeId, String managerEmployeeId){
 
-        Employee employee = employeeRepository
-                .findByEmployeeId(employeeId)
-                .orElseThrow(() ->
-                        new RuntimeException("Employee not found"));
+        Employee employee = getEmployeeOrThrow(employeeId);
 
-        Employee manager = employeeRepository
-                .findByEmployeeId(managerEmployeeId)
-                .orElseThrow(() ->
-                        new RuntimeException("Manager not found"));
-
-        if(employee.getEmployeeId().equals(managerEmployeeId)){
-            throw new RuntimeException("Employee cannot be their own manager");
-        }
+        String oldManagerId = employee.getManagerEmployeeId();
 
         // HIERARCHY VALIDATION ENGINE
         hierarchyRulesEngine.validateEmployeeHierarchy(
@@ -113,8 +187,74 @@ public class EmployeeService {
         );
 
         employee.setManagerEmployeeId(managerEmployeeId);
+        Employee saved = employeeRepository.save(employee);
 
-        return employeeRepository.save(employee);
+        recordManagerHistory(
+                employeeId,
+                oldManagerId,
+                managerEmployeeId,
+                oldManagerId == null ? ManagerChangeType.ASSIGNED : ManagerChangeType.CHANGED,
+                null
+        );
+
+        return saved;
+    }
+
+    /**
+     * Clears an employee's manager (e.g. the manager left, or the employee
+     * is between reporting lines during a re-org). Explicitly supported so
+     * "if [a manager] is not [present] it can be empty" always has a safe,
+     * intentional path rather than requiring a dummy manager id.
+     */
+    @Transactional
+    public Employee removeManager(String employeeId, String reason){
+
+        Employee employee = getEmployeeOrThrow(employeeId);
+
+        String oldManagerId = employee.getManagerEmployeeId();
+
+        if (oldManagerId == null) {
+            return employee;
+        }
+
+        employee.setManagerEmployeeId(null);
+        Employee saved = employeeRepository.save(employee);
+
+        recordManagerHistory(employeeId, oldManagerId, null, ManagerChangeType.REMOVED, reason);
+
+        return saved;
+    }
+
+    @Transactional(readOnly = true)
+    public List<EmployeeManagerHistory> getManagerHistory(String employeeId){
+
+        return managerHistoryRepository.findByEmployeeIdOrderByChangedAtDesc(employeeId);
+    }
+
+    private void recordManagerHistory(
+            String employeeId,
+            String oldManagerEmployeeId,
+            String newManagerEmployeeId,
+            ManagerChangeType changeType,
+            String reason
+    ) {
+
+        managerHistoryRepository.save(
+                EmployeeManagerHistory.builder()
+                        .employeeId(employeeId)
+                        .oldManagerEmployeeId(oldManagerEmployeeId)
+                        .newManagerEmployeeId(newManagerEmployeeId)
+                        .changeType(changeType)
+                        .reason(reason)
+                        .build()
+        );
+    }
+
+    private Employee getEmployeeOrThrow(String employeeId) {
+
+        return employeeRepository
+                .findByEmployeeId(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + employeeId));
     }
 
     @Transactional(readOnly = true)
@@ -122,14 +262,7 @@ public class EmployeeService {
             String employeeId
     ) {
 
-        Employee employee =
-                employeeRepository
-                        .findByEmployeeId(employeeId)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Employee not found"
-                                )
-                        );
+        Employee employee = getEmployeeOrThrow(employeeId);
 
         List<Employee> managerChain =
                 buildManagerChain(employee);

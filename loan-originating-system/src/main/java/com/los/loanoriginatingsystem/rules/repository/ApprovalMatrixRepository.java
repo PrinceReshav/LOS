@@ -12,4 +12,6 @@ public interface ApprovalMatrixRepository extends JpaRepository<ApprovalMatrix, 
 
 
     List<ApprovalMatrix> findByLevelOrderBySequenceAsc(Integer deviationLevel);
+
+    List<ApprovalMatrix> findByLevelAndActiveTrueOrderBySequenceAsc(Integer deviationLevel);
 }

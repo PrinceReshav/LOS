@@ -50,7 +50,7 @@ spring:
         - id: los-admin-service
           uri: http://localhost:8081
           predicates:
-            - Path=/admin/employees/**,/admin/branches/**,/admin/employee-branch-mappings/**
+            - Path=/admin/employees/**,/admin/branches/**,/admin/employee-branch-mappings/**,/admin/departments/**,/admin/designations/**,/admin/languages/**,/admin/hierarchy-rules/**,/admin/roles/**
           filters:
             - JwtValidation
 

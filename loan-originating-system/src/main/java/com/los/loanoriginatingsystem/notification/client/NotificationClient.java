@@ -12,14 +12,20 @@ public class NotificationClient {
 
     private final RestTemplate restTemplate;
 
-    @Value("${admin.service.url}")
-    private String adminUrl;
+    // FIX: this previously used admin.service.url, which points at
+    // los-admin-service (port 8081, employee/branch/org-role data) - but
+    // /internal/notifications/send only exists in administration-service
+    // (port 8080, see NotificationController). Every call silently 404'd
+    // and was swallowed by the catch-all below, so no notification was
+    // ever actually delivered.
+    @Value("${administration.service.url}")
+    private String administrationServiceUrl;
 
     public void send(NotificationRequest request) {
 
         try {
             restTemplate.postForObject(
-                    adminUrl + "/internal/notifications/send",
+                    administrationServiceUrl + "/internal/notifications/send",
                     request,
                     Void.class
             );

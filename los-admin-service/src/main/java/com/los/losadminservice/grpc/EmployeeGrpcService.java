@@ -3,6 +3,7 @@ package com.los.losadminservice.grpc;
 import com.los.grpc.employee.*;
 import com.los.losadminservice.employee.model.Employee;
 import com.los.losadminservice.employee.repository.EmployeeRepository;
+import com.los.losadminservice.employeeBranchMapping.repository.EmployeeBranchMappingRepository;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ public class EmployeeGrpcService
         extends EmployeeServiceGrpc.EmployeeServiceImplBase {
 
     private final EmployeeRepository employeeRepository;
+    private final EmployeeBranchMappingRepository employeeBranchMappingRepository;
 
     @Override
     public void createEmployee(
@@ -47,8 +49,13 @@ public class EmployeeGrpcService
                 .email(request.getEmail())
                 .mobile(request.getMobile())
 
-                .roleId(request.getRoleId())
-                .roleName(request.getRoleName())
+                // FIX: read the organizational role (orgRoleId/orgRoleName),
+                // not administration-service's system-access role. This
+                // Employee.roleId is what EmployeeHierarchyValidator later
+                // looks up in THIS service's own Role catalog (FIELD_OFFICER,
+                // CEO, ...), so it must already be one of those role IDs.
+                .roleId(request.getOrgRoleId())
+                .roleName(request.getOrgRoleName())
 
                 .profileId(request.getProfileId())
                 .profileName(request.getProfileName())
@@ -107,13 +114,13 @@ public class EmployeeGrpcService
                                         : ""
                         )
 
-                        .setRoleId(
+                        .setOrgRoleId(
                                 employee.getRoleId() != null
                                         ? employee.getRoleId()
                                         : ""
                         )
 
-                        .setRoleName(
+                        .setOrgRoleName(
                                 employee.getRoleName() != null
                                         ? employee.getRoleName()
                                         : ""
@@ -133,6 +140,13 @@ public class EmployeeGrpcService
 
                         .setActive(
                                 Boolean.TRUE.equals(employee.getActive())
+                        )
+
+                        .setBranchId(
+                                employeeBranchMappingRepository
+                                        .findByEmployeeIdAndActiveTrueAndPrimaryBranchTrue(employee.getEmployeeId())
+                                        .map(m -> m.getBranchId())
+                                        .orElse("")
                         )
 
                         .build();

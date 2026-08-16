@@ -8,12 +8,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "employee_branch_mapping",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_employee_branch",
-                        columnNames = {"employee_id", "branch_id"}
-                )
-        },
         indexes = {
 
                 @Index(
@@ -49,6 +43,16 @@ public class EmployeeBranchMapping {
     @Column(name = "branch_id", nullable = false)
     private String branchId;
 
+    /**
+     * Marks this as the employee's primary branch. An employee can be
+     * mapped to more than one branch (e.g. a Branch Credit Manager covering
+     * a cluster), but exactly one active mapping is the primary one - this
+     * is what "MyEmployee" / the Employee Details page shows as the main
+     * branch.
+     */
+    @Column(name = "primary_branch", nullable = false)
+    private Boolean primaryBranch;
+
     @Column(nullable = false)
     private Boolean active;
 
@@ -80,7 +84,9 @@ public class EmployeeBranchMapping {
             active = true;
         }
 
-
+        if (primaryBranch == null) {
+            primaryBranch = false;
+        }
     }
 
     @PreUpdate

@@ -43,9 +43,9 @@ public class ApprovalEngine {
             throw new RuntimeException("Deviation already closed");
         }
 
-        // 🔥 Load approval steps
+        // 🔥 Load approval steps (active only - deactivated steps are excluded from routing)
         List<ApprovalMatrix> steps =
-                matrixRepo.findByLevelOrderBySequenceAsc(dev.getDeviationLevel());
+                matrixRepo.findByLevelAndActiveTrueOrderBySequenceAsc(dev.getDeviationLevel());
 
         if (steps == null || steps.isEmpty()) {
             throw new RuntimeException(
@@ -106,10 +106,8 @@ public class ApprovalEngine {
 
         notificationClient.send(
                 new NotificationRequest(
-                        "EMAIL",
+                        "DEVIATION_APPROVED",
                         List.of("manager@company.com"),
-                        "Deviation Approved",
-                        "Deviation " + dev.getId() + " approved",
                         Map.of("deviationId", dev.getId())
                 )
         );

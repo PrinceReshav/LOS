@@ -23,6 +23,8 @@ public final class UserMapper {
                 .lastName(user.getLastName())
                 .employeeId(user.getEmployeeId())
                 .roleName(role.getRoleName())
+                .orgRoleId(user.getOrgRoleId())
+                .orgRoleName(user.getOrgRoleName())
                 .profileName(profile.getProfileName())
                 .licenseType(user.getLicenseType())
                 .active(user.getActive())

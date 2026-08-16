@@ -60,8 +60,8 @@ public class UserController {
         return ApiResponse.success(response, "User deactivated successfully");
     }
 
-    @PatchMapping("/{userId}")
     @RequiresPermission(object = "USER", action = "UPDATE")
+    @PatchMapping("/{userId}")
     public ApiResponse<UserResponse> updateUser(
             @PathVariable String userId,
             @RequestBody UserUpdateRequest request
@@ -72,6 +72,13 @@ public class UserController {
         );
     }
 
+    // FIX: this endpoint (and /bulk-upload/commit below) previously had
+    // no @PreAuthorize/@RequiresPermission at all, while the older
+    // single-shot /bulk-upload endpoint required hasRole('ADMIN'). Since
+    // validate -> commit ends in real user creation, it needs the same
+    // guard as createUser/bulkUpload.
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequiresPermission(object = "USER", action = "CREATE")
     @PostMapping("/bulk-upload/validate")
     public ApiResponse<BulkUploadPreviewResponse> validate(
             @RequestParam("file") MultipartFile file
@@ -82,6 +89,8 @@ public class UserController {
         );
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequiresPermission(object = "USER", action = "CREATE")
     @PostMapping("/bulk-upload/commit")
     public ApiResponse<BulkUserUploadResult> commit(
             @RequestParam String uploadId
@@ -93,6 +102,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @RequiresPermission(object = "USER", action = "CREATE")
     @PostMapping("/bulk-upload")
     public ApiResponse<BulkUserUploadResult> bulkUpload(
             @RequestParam("file") MultipartFile file
@@ -167,32 +177,19 @@ public class UserController {
         );
     }
 
+    /**
+     * Backs the User Details page - notably, this is the page the LOS
+     * Admin Employee Details screen links to via the employee's userId.
+     */
+    @PreAuthorize("isAuthenticated()")
+    @RequiresPermission(object = "USER", action = "READ")
+    @GetMapping("/{userId}")
+    public ApiResponse<UserResponse> getUserById(@PathVariable String userId) {
 
+        return ApiResponse.success(
+                userService.getUserById(userId),
+                "User fetched successfully"
+        );
+    }
 
 }
-
-
-/*
- * @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping
-    public ApiResponse<Page<UserResponse>> getUsers(
-            @RequestParam(required = false) String username,
-            @RequestParam(required = false) String employeeId,
-            @RequestParam(required = false) String roleName,
-            @RequestParam(required = false) String profileName,
-            @RequestParam(required = false) Boolean active,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
-
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by(Sort.Direction.DESC, "createdAt")
-        );
-
-        Page<UserResponse> result =
-                userService.getUsers(username, employeeId, roleName, profileName, active, pageable);
-
-        return ApiResponse.success(result, "Users fetched successfully");
-    }*/

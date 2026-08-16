@@ -2,6 +2,7 @@ package com.los.administration.user.service;
 
 import com.los.administration.auth.util.SecurityUtils;
 import com.los.administration.command.UserStatusCommandService;
+import com.los.administration.orgrole.client.OrgRoleClient;
 import com.los.administration.common.exception.ResourceNotFoundException;
 import com.los.administration.profile.model.Profile;
 import com.los.administration.profile.repository.ProfileRepository;
@@ -56,6 +57,7 @@ public class UserService {
     private final IncrementalVisibilityService incrementalVisibilityService;
     private final FieldSecurityService fieldSecurityService;
     private final FieldFilterUtil fieldFilterUtil;
+    private final OrgRoleClient orgRoleClient;
 
 
     private final UserCreationService userCreationService;
@@ -83,15 +85,32 @@ public class UserService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // 🔥 GET PERMISSIONS
         String currentUserId = SecurityUtils.getCurrentUserId();
 
         User currentUser = userRepository.findByUserId(currentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
 
+        // FIX: this method previously had no visibility/ownership check
+        // at all - getUserById enforces isAdmin || isSelf || visible-to-viewer,
+        // but any caller holding USER:UPDATE could edit ANY user's profile
+        // fields regardless of whether that user was in their visibility
+        // scope. Enforce the same rule here.
+        boolean isAdmin = isAdmin(currentUser);
+        boolean isSelf = currentUserId.equals(userId);
+
+        if (!isAdmin && !isSelf
+                && !userRepository.isVisibleToViewer(currentUserId, userId)) {
+            throw new AccessDeniedException("This user is not visible to you");
+        }
+
         String profileId = currentUser.getProfile().getProfileId();
+
         // 🔒 HARDENING: prevent privilege escalation
-        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole().getRoleName())) {
+        // FIX: previously only checked role name == "ADMIN", which
+        // disagreed with getUserById/getUsers where RoleType.ROOT is also
+        // treated as admin-equivalent. Use the same isAdmin(...) check
+        // everywhere so the privilege model is consistent.
+        if (!isAdmin) {
             if (req.getRoleName() != null || req.getProfileName() != null) {
                 throw new AccessDeniedException("Cannot modify role or profile");
             }
@@ -112,10 +131,16 @@ public class UserService {
         if (req.getLastName() != null) user.setLastName(req.getLastName());
 
         // 🔥 SENSITIVE FIELDS (extra protection)
+        Role oldRole = user.getRole();
+        boolean roleChanged = false;
+
         if (req.getRoleName() != null) {
             Role role = roleRepository.findByRoleName(req.getRoleName())
                     .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
-            user.setRole(role);
+            if (!role.getRoleId().equals(oldRole.getRoleId())) {
+                user.setRole(role);
+                roleChanged = true;
+            }
         }
 
         if (req.getProfileName() != null) {
@@ -130,9 +155,18 @@ public class UserService {
 
         user.setUpdatedByUserId(currentUserId);
 
-        userRepository.save(user);
+        User saved = userRepository.save(user);
 
-        return UserMapper.toResponse(user, user.getRole(), user.getProfile());
+        // FIX: changing a user's role here previously never triggered a
+        // visibility rebuild - only the orphaned, never-called
+        // updateUserRole(...) method did that. Any role change made
+        // through this (actually reachable) path left user_visibility
+        // stale.
+        if (roleChanged) {
+            incrementalVisibilityService.onRoleChanged(saved, oldRole);
+        }
+
+        return UserMapper.toResponse(saved, saved.getRole(), saved.getProfile());
     }
 
 
@@ -146,7 +180,10 @@ public class UserService {
                 );
 
         user.setActive(true);
-        user.setUpdatedByUserId("SYSTEM_ADMIN");
+        // FIX: was hardcoded to "SYSTEM_ADMIN" regardless of who actually
+        // performed the action, which made the audit trail useless for
+        // this operation.
+        user.setUpdatedByUserId(SecurityUtils.getCurrentUserId());
 
         try {
             commandService.activateEmployee(userId);
@@ -178,7 +215,8 @@ public class UserService {
                 );
 
         user.setActive(false);
-        user.setUpdatedByUserId("SYSTEM_ADMIN");
+        // FIX: same audit-trail issue as activateUser - use the actual caller.
+        user.setUpdatedByUserId(SecurityUtils.getCurrentUserId());
 
         try {
             commandService.deactivateEmployee(userId);
@@ -196,14 +234,9 @@ public class UserService {
 
         UserResponse response = toResponse(user, role, profile);
 
-        String currentUserId = SecurityUtils.getCurrentUserId();
-
-        User currentUser = userRepository.findByUserId(currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
-
-        String profileId = currentUser.getProfile().getProfileId();
-        fieldSecurityService.getPermissions(profileId, "USER");
-
+        // FIX: removed the redundant fieldSecurityService.getPermissions(...)
+        // call whose result was discarded (leftover from a copy/paste) -
+        // getCurrentUserPermissions() below already fetches this.
         Map<String, SecurityFieldPermission> permissions =
                 getCurrentUserPermissions();
         return fieldFilterUtil.filter(response, permissions);
@@ -226,6 +259,39 @@ public class UserService {
                 .licenseType(user.getLicenseType())
                 .active(user.getActive())
                 .build();
+    }
+
+    /**
+     * Single-user fetch backing the User Details page - this is the page
+     * the LOS Admin service's Employee Details page links to via the
+     * employee's userId (a Salesforce/IAM-style "click the User Id to see
+     * the user record" link).
+     */
+    @Transactional(readOnly = true)
+    public UserResponse getUserById(String targetUserId) {
+
+        String currentUserId = SecurityUtils.getCurrentUserId();
+
+        User currentUser = userRepository.findByUserId(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+
+        boolean isAdmin = isAdmin(currentUser);
+
+        boolean isSelf = currentUserId.equals(targetUserId);
+
+        if (!isAdmin && !isSelf
+                && !userRepository.isVisibleToViewer(currentUserId, targetUserId)) {
+            throw new AccessDeniedException("This user is not visible to you");
+        }
+
+        User target = userRepository.findDetailedByUserId(targetUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + targetUserId));
+
+        UserResponse response = toResponse(target, target.getRole(), target.getProfile());
+
+        Map<String, SecurityFieldPermission> permissions = getCurrentUserPermissions();
+
+        return fieldFilterUtil.filter(response, permissions);
     }
 
     @Transactional(readOnly = true)
@@ -265,8 +331,7 @@ public class UserService {
                 active
         );
 
-        if (currentUser.getRole().getRoleType() == RoleType.ROOT
-                || "ADMIN".equalsIgnoreCase(currentUser.getRole().getRoleName())) {
+        if (isAdmin(currentUser)) {
 
             return userRepository.findAll(pageable)
                     .map(user -> {
@@ -312,12 +377,17 @@ public class UserService {
             throw new IllegalArgumentException("Maximum 200 users allowed per upload");
         }
 
+        // FIX: previously hardcoded "SYSTEM_ADMIN" as the creator for
+        // every bulk-uploaded row, which made the audit trail useless -
+        // use the actual caller instead.
+        String currentUserId = SecurityUtils.getCurrentUserId();
+
         int excelRowNumber = 2; // header is row 1
 
         for (UserCreateRequest req : rows) {
             try {
                 UserResponse user =
-                        userCreationService.createUser(req, "SYSTEM_ADMIN");
+                        userCreationService.createUser(req, currentUserId);
                 successUsers.add(user);
 
             } catch (DataIntegrityViolationException ex) {
@@ -405,6 +475,35 @@ public class UserService {
                 isValid = false;
             }
 
+            // FIX: previously roleName/profileName were never checked
+            // for existence during preview, so a row could be marked
+            // "valid" here and still blow up with a
+            // ResourceNotFoundException at commitUpload time - defeating
+            // the purpose of a preview step.
+            if (req.getRoleName() == null || req.getRoleName().isBlank()
+                    || roleRepository.findByRoleName(req.getRoleName()).isEmpty()) {
+                rowErrors.add("Role not found: " + req.getRoleName());
+                isValid = false;
+            }
+
+            // FIX: orgRoleId (the organizational/hierarchy role, e.g.
+            // FIELD_OFFICER) was never validated during bulk-upload
+            // preview, so a row could pass here and still fail later
+            // with "Role not found" the first time a branch or
+            // reporting manager was assigned to that employee.
+            try {
+                orgRoleClient.getActiveOrgRole(req.getOrgRoleId());
+            } catch (Exception ex) {
+                rowErrors.add("Org role not found: " + req.getOrgRoleId());
+                isValid = false;
+            }
+
+            if (req.getProfileName() == null || req.getProfileName().isBlank()
+                    || profileRepository.findByProfileName(req.getProfileName()).isEmpty()) {
+                rowErrors.add("Profile not found: " + req.getProfileName());
+                isValid = false;
+            }
+
             if (isValid) {
                 validUsers.add(req);
             }
@@ -448,7 +547,6 @@ public class UserService {
 
         userRepository.save(user);
 
-        // ✅ EXACT LINE YOU ASKED
         incrementalVisibilityService.onRoleChanged(user, oldRole);
     }
 
@@ -464,13 +562,17 @@ public class UserService {
         List<UserResponse> success = new ArrayList<>();
         List<BulkUploadError> errors = new ArrayList<>();
 
+        // FIX: same audit-trail issue as bulkUploadUsers - use the
+        // actual caller instead of a hardcoded "SYSTEM_ADMIN".
+        String currentUserId = SecurityUtils.getCurrentUserId();
+
         int rowNumber = 2;
 
         for (UserCreateRequest req : users) {
 
             try {
                 UserResponse created =
-                        userCreationService.createUser(req, "SYSTEM_ADMIN");
+                        userCreationService.createUser(req, currentUserId);
 
                 success.add(created);
 
@@ -512,6 +614,16 @@ public class UserService {
         String profileId = currentUser.getProfile().getProfileId();
 
         return fieldSecurityService.getPermissions(profileId, "USER");
+    }
+
+    // FIX: centralizes the "is this user admin-equivalent" check, which
+    // was previously implemented two different ways in the same class -
+    // updateUser only checked roleName == "ADMIN", while getUserById/
+    // getUsers also accepted RoleType.ROOT. A ROOT-type user could act as
+    // admin in one endpoint but be denied in another.
+    private boolean isAdmin(User user) {
+        return user.getRole().getRoleType() == RoleType.ROOT
+                || "ADMIN".equalsIgnoreCase(user.getRole().getRoleName());
     }
 
     private String normalize(String value) {

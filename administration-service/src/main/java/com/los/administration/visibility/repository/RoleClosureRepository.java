@@ -17,4 +17,6 @@ public interface RoleClosureRepository
             String ancestor,
             String descendant
     );
+
+    void deleteByDescendantRoleId(String descendantRoleId);
 }

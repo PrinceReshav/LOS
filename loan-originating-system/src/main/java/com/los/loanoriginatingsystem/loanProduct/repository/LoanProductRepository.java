@@ -18,4 +18,6 @@ public interface LoanProductRepository
             LoanType loanType,
             LoanScheme loanScheme
     );
+
+    boolean existsByNameIgnoreCase(String name);
 }

@@ -24,4 +24,9 @@ public interface DocumentRepository
             String tempLoanId,
             String documentType
     );
+
+    Optional<Document> findByLoanApplicationIdAndDocumentType(
+            String loanApplicationId,
+            String documentType
+    );
 }   

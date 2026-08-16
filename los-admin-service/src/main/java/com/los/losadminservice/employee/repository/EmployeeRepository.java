@@ -35,7 +35,8 @@ WHERE e.managerEmployeeId IS NOT NULL
 
     Optional<Employee> findByUserId(String userId);
 
+    List<Employee> findByApproverRoleCodeAndActiveTrue(String approverRoleCode);
 
-
+    List<Employee> findByEmployeeIdIn(List<String> employeeIds);
 
 }

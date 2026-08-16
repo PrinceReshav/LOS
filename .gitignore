@@ -12,3 +12,19 @@
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Maven build folders
+target/
+*/target/
+
+# Java compiled files
+*.class
+
+# VS Code
+.vscode/
+
+# Build output
+out/
+
+# Archives
+*.zip
